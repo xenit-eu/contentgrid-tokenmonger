@@ -1,0 +1,15 @@
+server:
+  port: 9089
+  error.include-message: always
+
+management:
+  server:
+    port: 9189
+
+contentgrid:
+  tokenmonger:
+    user-to-extension:
+      jwk-set-uri: http://localhost:9081/actuator/jwks/apps
+      issuer: http://localhost:9089/extensions
+      active-signing-keys: file:signing-keys/active.pem
+      retired-signing-keys: file:signing-keys/*.pem

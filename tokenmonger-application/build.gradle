@@ -1,0 +1,45 @@
+plugins {
+	id 'org.springframework.boot'
+	id 'java'
+	id 'io.freefair.lombok'
+	id 'org.ajoberstar.grgit'
+}
+
+bootRun {
+	args = ["--spring.profiles.active=bootRun"]
+}
+
+java {
+	sourceCompatibility = '17'
+}
+
+springBoot {
+	buildInfo {
+		properties {
+			additional = [
+					"git": grgit.describe(always: true, longDescr: true, tags: true)
+			]
+		}
+	}
+}
+
+dependencies {
+	implementation platform(project(':tokenmonger-dependencies'))
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-authorization-server'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+	implementation 'com.contentgrid.spring:contentgrid-spring-boot-autoconfigure:0.13.1'
+	implementation('org.bouncycastle:bcpkix-jdk18on:1.78.1') {
+		because "necessary to load PEM-encoded private keys into JWKs"
+	}
+	implementation("org.springframework.security:spring-security-oauth2-authorization-server") {
+		version {
+			strictly '1.3.0-RC1'
+		}
+	}
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+
