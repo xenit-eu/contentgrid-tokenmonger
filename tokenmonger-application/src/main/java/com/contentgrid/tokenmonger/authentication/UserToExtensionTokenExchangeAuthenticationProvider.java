@@ -2,9 +2,12 @@ package com.contentgrid.tokenmonger.authentication;
 
 import static com.contentgrid.tokenmonger.authentication.UserToExtensionTokenExchangeAuthenticationConverter.ACCESS_TOKEN_REQUEST_ERROR_URI;
 
-import com.contentgrid.tokenmonger.clientregistration.RegisteredClientRepository;
+import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtension;
+import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -24,6 +27,7 @@ import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
@@ -32,10 +36,13 @@ import org.springframework.util.Assert;
 
 @RequiredArgsConstructor
 public class UserToExtensionTokenExchangeAuthenticationProvider implements AuthenticationProvider {
+
     private static final String INVALID_TARGET_ERROR_URI = "https://www.rfc-editor.org/rfc/rfc8707.html#section-2";
+    private static final String INVALID_TARGET = "invalid_target";
 
     private final OAuth2AuthorizationService authorizationService;
     private final OAuth2TokenGenerator<? extends OAuth2Token> tokenGenerator;
+    private final RegisteredExtensionRepository registeredExtensionRepository;
     private final RegisteredClientRepository registeredClientRepository;
 
     @Override
@@ -50,15 +57,10 @@ public class UserToExtensionTokenExchangeAuthenticationProvider implements Authe
             );
         }
         for (String resource : tokenExchangeAuthentication.getResources()) {
-            var resourceClient = registeredClientRepository.findByResourceUri(resource);
-            if(resourceClient == null) {
-                throw new OAuth2AuthenticationException(
-                        new OAuth2Error("invalid_target", "Resource '%s' is not registered with any client".formatted(resource), INVALID_TARGET_ERROR_URI)
-                );
-            }
+            var resourceClient = findRegisteredClientByResourceUri(resource);
             if (registeredClient != null && !Objects.equals(registeredClient.getClientId(), resourceClient.getClientId())) {
                 throw new OAuth2AuthenticationException(
-                        new OAuth2Error("invalid_target", "Resource parameters are registered with different clients", INVALID_TARGET_ERROR_URI)
+                        new OAuth2Error(INVALID_TARGET, "Resource parameters are registered with different clients", INVALID_TARGET_ERROR_URI)
                 );
             }
             registeredClient = resourceClient;
@@ -114,6 +116,35 @@ public class UserToExtensionTokenExchangeAuthenticationProvider implements Authe
                 registeredClient,
                 new OAuth2ClientAuthenticationToken(registeredClient, ClientAuthenticationMethod.NONE, null),
                 oauth2AccessToken
+        );
+
+    }
+
+    private RegisteredClient findRegisteredClientByResourceUri(String resourceUri) {
+        var extension = registeredExtensionRepository.findByResourceUri(resourceUri);
+        if(extension.isEmpty()) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error(INVALID_TARGET, "Resource '%s' is not registered with any extension".formatted(resourceUri), INVALID_TARGET_ERROR_URI)
+            );
+        }
+
+        for (String clientId : extension.get().getClientIds()) {
+            var registeredClient = registeredClientRepository.findByClientId(clientId);
+            if(registeredClient == null) {
+                continue;
+            }
+
+            var clientSecretExpiry = Optional.ofNullable(registeredClient.getClientSecretExpiresAt()).orElse(Instant.MAX);
+            // Client is expired, can no longer be used for authentication
+            if(clientSecretExpiry.isBefore(Instant.now())) {
+                continue;
+            }
+
+            return registeredClient;
+        }
+
+        throw new OAuth2AuthenticationException(
+                new OAuth2Error(INVALID_TARGET, "Resource '%s' is not registered with any active client".formatted(resourceUri), INVALID_TARGET_ERROR_URI)
         );
 
     }

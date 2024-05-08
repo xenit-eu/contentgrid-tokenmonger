@@ -1,17 +1,16 @@
 package com.contentgrid.tokenmonger;
 
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
-import com.contentgrid.tokenmonger.authentication.AuthorizationGrantExtensions;
 import com.contentgrid.tokenmonger.authentication.UserToExtensionTokenExchangeAuthenticationConverter;
 import com.contentgrid.tokenmonger.authentication.UserToExtensionTokenExchangeAuthenticationProvider;
-import com.contentgrid.tokenmonger.clientregistration.InMemoryRegisteredClientRepository;
-import com.contentgrid.tokenmonger.clientregistration.RegisteredClientRepository;
 import com.contentgrid.tokenmonger.configuration.AuthorizationServerContextConfigurer;
 import com.contentgrid.tokenmonger.configuration.AuthorizationServerMetadataEndpointConfigurer;
 import com.contentgrid.tokenmonger.configuration.EndpointConfiguration;
 import com.contentgrid.tokenmonger.configuration.JwkSetEndpointConfigurer;
 import com.contentgrid.tokenmonger.configuration.ServicesConfigurer;
 import com.contentgrid.tokenmonger.configuration.TokenEndpointConfigurer;
+import com.contentgrid.tokenmonger.extensions.registration.InMemoryRegisteredExtensionRepository;
+import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.jwk.source.ExpiredJWKFilteringJWKSource;
 import com.contentgrid.tokenmonger.jwk.source.FilebasedJWKSetSource;
 import com.contentgrid.tokenmonger.jwk.source.LoggingJWKSetSourceEventListener;
@@ -23,9 +22,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
-import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -34,24 +31,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.oauth2.client.AuthorizationCodeGrantDsl;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponseType;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
+import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher;
 
 @SpringBootApplication
-@EnableConfigurationProperties(TokenMongerUserToExtensionProperties.class)
+@EnableConfigurationProperties({TokenMongerUserToExtensionProperties.class, TokenMongerExtensionProperties.class})
 public class TokenmongerApplication {
 
 	public static void main(String[] args) {
@@ -64,26 +59,8 @@ public class TokenmongerApplication {
 	}
 
 	@Bean
-	public InMemoryRegisteredClientRepository registeredClientRepository() {
-		return new InMemoryRegisteredClientRepository(List.of(
-				RegisteredClient.withId("test")
-						.clientId("test")
-						.clientSecret("{noop}test")
-						.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-						.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-						.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-						.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-						.authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE)
-						.authorizationGrantType(AuthorizationGrantExtensions.CONTENTGRID_EXTENSION_TOKEN_GRANT_TYPE)
-						.redirectUri("http://localhost/oauth2")
-						.clientSettings(ClientSettings.builder()
-								.setting(InMemoryRegisteredClientRepository.RESOURCE_URI_SETTING, List.of(
-										"http://example.com/",
-										"http://example.org/"
-								))
-								.build())
-						.build()
-		));
+	RegisteredExtensionRepository inMemoryRegisteredExtensionRepository(TokenMongerExtensionProperties extensionProperties) {
+		return new InMemoryRegisteredExtensionRepository(extensionProperties.getRegistration().values());
 	}
 
 	@Bean
@@ -125,9 +102,21 @@ public class TokenmongerApplication {
 	public OAuth2TokenGenerator<?> userToExtensionTokenGenerator(
 			@IssuerContext(IssuerType.USER_TO_EXTENSION) JWKSource<SecurityContext> jwkSource
 	) {
-		return new JwtGenerator(
+		var generator = new JwtGenerator(
 				new NimbusJwtEncoder(new RandomJWKSelectionJWKSource<>(new ExpiredJWKFilteringJWKSource<>(jwkSource)))
 		);
+		generator.setJwtCustomizer(token -> {
+			if(token.getPrincipal() instanceof AbstractOAuth2TokenAuthenticationToken<?> oauth2AuthenticationToken) {
+				token.getClaims().claims(claims -> {
+					oauth2AuthenticationToken.getTokenAttributes().forEach((name, value) -> {
+						if(name.startsWith("restrict:") || name.startsWith("context:")) {
+							claims.put(name, value);
+						}
+					});
+				});
+			}
+		});
+		return generator;
 	}
 
 	@Bean
@@ -135,6 +124,7 @@ public class TokenmongerApplication {
 	public SecurityFilterChain userToExtensionInAppSecurityFilterChain(
 			HttpSecurity http,
 			OAuth2AuthorizationService authorizationService,
+			RegisteredExtensionRepository registeredExtensionRepository,
 			RegisteredClientRepository registeredClientRepository,
 			TokenMongerUserToExtensionProperties userToExtensionProperties,
 			@IssuerContext(IssuerType.USER_TO_EXTENSION) OAuth2TokenGenerator<?> tokenGenerator,
@@ -168,6 +158,7 @@ public class TokenmongerApplication {
 					.authenticationProvider(new UserToExtensionTokenExchangeAuthenticationProvider(
 							authorizationService,
 							tokenGenerator,
+							registeredExtensionRepository,
 							registeredClientRepository
 					))
 					.tokenEndpoint(endpoints.getTokenEndpoint())

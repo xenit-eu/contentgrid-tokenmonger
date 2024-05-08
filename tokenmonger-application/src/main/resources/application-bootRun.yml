@@ -6,10 +6,39 @@ management:
   server:
     port: 9189
 
+spring:
+  security:
+    oauth2:
+      authorizationserver:
+        client:
+          test:
+            registration:
+              client-id: "test"
+              client-secret: "{noop}test"
+              client-authentication-methods:
+                - "client_secret_basic"
+                - "client_secret_post"
+              authorization-grant-types:
+                - "authorization_code"
+                - "client_credentials"
+                - "https://contentgrid.cloud/oauth2/grant/extension-token"
+                - "urn:ietf:params:oauth:grant-type:token-exchange"
+              redirect-uris:
+                - "http://localhost/oauth2"
+
 contentgrid:
   tokenmonger:
     user-to-extension:
-      jwk-set-uri: http://localhost:9081/actuator/jwks/apps
+      jwk-set-uri: http://localhost:9081/actuator/jwks/authentication
       issuer: http://localhost:9089/extensions
       active-signing-keys: file:signing-keys/active.pem
       retired-signing-keys: file:signing-keys/*.pem
+    extension:
+      registration:
+        test:
+          extension-id: test
+          client-ids:
+            - test
+          resource-uris:
+            - http://example.com/
+            - http://example.org/
