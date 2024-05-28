@@ -25,7 +25,10 @@ import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
 import java.net.URI;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +39,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponseType;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -107,7 +115,9 @@ public class TokenmongerApplication {
 	@Bean
 	@IssuerContext(IssuerType.USER_TO_EXTENSION)
 	public OAuth2TokenGenerator<?> userToExtensionTokenGenerator(
-			@IssuerContext(IssuerType.USER_TO_EXTENSION) JWKSource<SecurityContext> jwkSource
+			@IssuerContext(IssuerType.USER_TO_EXTENSION) JWKSource<SecurityContext> jwkSource,
+			RegisteredExtensionRepository extensionRepository,
+			TokenMongerExtensionProperties extensionProperties
 	) {
 		var generator = new JwtGenerator(
 				new NimbusJwtEncoder(new RandomJWKSelectionJWKSource<>(new ExpiredJWKFilteringJWKSource<>(jwkSource)))
@@ -121,7 +131,20 @@ public class TokenmongerApplication {
 						}
 					});
 				});
+				var userTokenExpiresAt = oauth2AuthenticationToken.getToken().getExpiresAt();
+				if (userTokenExpiresAt != null) {
+					var originalTokenExpiry = token.getClaims().build().getExpiresAt();
+					if(originalTokenExpiry.isAfter(userTokenExpiresAt)) {
+						token.getClaims().expiresAt(userTokenExpiresAt);
+					}
+				}
 			}
+			extensionRepository.findByClientId(token.getRegisteredClient().getClientId()).ifPresent(extension -> {
+				token.getClaims().claim("may_act", Map.of(
+						JwtClaimNames.ISS, extensionProperties.getIssuer().toString(),
+						JwtClaimNames.SUB, extension.getExtensionId()
+				));
+			});
 		});
 		return generator;
 	}
@@ -184,7 +207,15 @@ public class TokenmongerApplication {
 
 		http.oauth2ResourceServer(resourceServer -> {
 			resourceServer.jwt(jwt -> {
-				jwt.jwkSetUri(userToExtensionProperties.getJwkSetUri());
+				var jwtDecoder = NimbusJwtDecoder.withJwkSetUri(userToExtensionProperties.getJwkSetUri()).build();
+
+				jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+						JwtValidators.createDefaultWithValidators(
+								new JwtClaimValidator<List<String>>(JwtClaimNames.AUD, (aud) -> aud != null && aud.contains("contentgrid:system:endpoints:authentication"))
+						)
+				));
+
+				jwt.decoder(jwtDecoder);
 			});
 		});
 
