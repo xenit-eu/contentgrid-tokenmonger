@@ -245,4 +245,13 @@ class TokenMongerApplicationTokenExchangeTests {
 
     }
 
+    @Test
+    void jwks_userToExtension() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/authentication/external/jwks")
+                        .header("Host", "extensions.contentgrid.test")
+                )
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json(userToExtensionSigningKeys.toString(true)));
+    }
+
 }
