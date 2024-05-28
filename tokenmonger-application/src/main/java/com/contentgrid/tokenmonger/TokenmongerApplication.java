@@ -5,6 +5,8 @@ import com.contentgrid.tokenmonger.authentication.UserToExtensionTokenExchangeAu
 import com.contentgrid.tokenmonger.authentication.UserToExtensionTokenExchangeAuthenticationProvider;
 import com.contentgrid.tokenmonger.configuration.AuthorizationServerContextConfigurer;
 import com.contentgrid.tokenmonger.configuration.AuthorizationServerMetadataEndpointConfigurer;
+import com.contentgrid.tokenmonger.configuration.AuthorizeEndpointConfigurer;
+import com.contentgrid.tokenmonger.configuration.ClientAuthenticationConfigurer;
 import com.contentgrid.tokenmonger.configuration.EndpointConfiguration;
 import com.contentgrid.tokenmonger.configuration.JwkSetEndpointConfigurer;
 import com.contentgrid.tokenmonger.configuration.ServicesConfigurer;
@@ -22,10 +24,12 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
+import java.net.URI;
 import java.util.List;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
@@ -86,6 +90,9 @@ public class TokenmongerApplication {
 			TokenMongerUserToExtensionProperties userToExtensionProperties,
 			ResourcePatternResolver resourcePatternResolver
 	) {
+		if(userToExtensionProperties.getActiveSigningKeys() == null) {
+			return null;
+		}
 		var fileJwkSource = new FilebasedJWKSetSource(
 				resourcePatternResolver,
 				userToExtensionProperties.getActiveSigningKeys(),
@@ -165,6 +172,12 @@ public class TokenmongerApplication {
 			;
 		});
 
+		http.with(new AuthorizeEndpointConfigurer(), authorizeEndpoint -> {
+			authorizeEndpoint
+					.authorizeEndpoint(endpoints.getAuthorizationEndpoint())
+					.withAuthorizationCode();
+		});
+
 		http.securityMatcher(endpoints.getRequestMatcher())
 				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
 				.csrf(csrf -> csrf.ignoringRequestMatchers(endpoints.getTokenEndpoint().getMatcher()));
@@ -191,7 +204,7 @@ public class TokenmongerApplication {
 		var endpoints = new EndpointConfiguration()
 				.baseMatcher(new RequestHeaderRequestMatcher("Host", issuerHost))
 				.issuer(userToExtensionProperties.getIssuer())
-				//.tokenEndpoint("/authentication/external/token")
+				.tokenEndpoint("/authentication/external/token")
 				//.tokenIntrospectionEndpoint("/authentication/external/introspect")
 				//.tokenRevocationEndpoint("/authentication/external/revoke")
 				.jwkSetEndpoint("/authentication/external/jwks")
@@ -206,12 +219,13 @@ public class TokenmongerApplication {
 			context.endpoints(endpoints);
 		});
 
-		/*
 		http.with(new ClientAuthenticationConfigurer(), clientAuthenticationConfigurer -> {
 			clientAuthenticationConfigurer
 					.endpoint(endpoints.getTokenEndpoint())
+					/*
 					.endpoint(endpoints.getTokenIntrospectionEndpoint())
 					.endpoint(endpoints.getTokenRevocationEndpoint())
+					 */
 					.clientSecret();
 		});
 
@@ -221,7 +235,6 @@ public class TokenmongerApplication {
 					.tokenEndpoint(endpoints.getTokenEndpoint())
 			;
 		});
-		*/
 
 		http.with(new JwkSetEndpointConfigurer(), jwkSetEndpoint -> {
 			jwkSetEndpoint

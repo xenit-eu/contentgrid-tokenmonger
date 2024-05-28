@@ -13,7 +13,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
@@ -75,6 +77,18 @@ class ConfigurerUtils {
             httpSecurity.setSharedObject(OAuth2TokenGenerator.class, tokenGenerator);
         }
         return tokenGenerator;
+    }
+
+    OAuth2AuthorizationConsentService getAuthorizationConsentService(HttpSecurity httpSecurity) {
+        OAuth2AuthorizationConsentService authorizationConsentService = httpSecurity.getSharedObject(OAuth2AuthorizationConsentService.class);
+        if (authorizationConsentService == null) {
+            authorizationConsentService = getOptionalBean(httpSecurity, OAuth2AuthorizationConsentService.class);
+            if (authorizationConsentService == null) {
+                authorizationConsentService = new InMemoryOAuth2AuthorizationConsentService();
+            }
+            httpSecurity.setSharedObject(OAuth2AuthorizationConsentService.class, authorizationConsentService);
+        }
+        return authorizationConsentService;
     }
 
     private JwtGenerator getJwtGenerator(HttpSecurity httpSecurity) {
