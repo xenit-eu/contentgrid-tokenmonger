@@ -3,7 +3,9 @@ package com.contentgrid.tokenmonger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.assertj.core.api.ThrowingConsumer;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -11,12 +13,18 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 
 @RequiredArgsConstructor
-public class AccessTokenJwtMvcResultMatcher implements ResultMatcher {
+public class AccessTokenJwtMvcResultMatcher implements ResultMatcher, Function<MvcResult, Jwt> {
     private final JwtDecoder jwtDecoder;
     private final ThrowingConsumer<? super Jwt> jwtMatcher;
 
     @Override
-    public void match(MvcResult result) throws Exception {
+    public void match(MvcResult result) {
+        apply(result);
+    }
+
+    @Override
+    @SneakyThrows
+    public Jwt apply(MvcResult result) {
         var objectMapper = new ObjectMapper();
         var tokenResponse = objectMapper.readTree(result.getResponse().getContentAsByteArray());
 
@@ -25,8 +33,8 @@ public class AccessTokenJwtMvcResultMatcher implements ResultMatcher {
                 .isNotNull();
 
         var jwt = jwtDecoder.decode(tokenResponse.get("access_token").asText());
-
         assertThat(jwt).satisfies(jwtMatcher);
 
+        return jwt;
     }
 }
