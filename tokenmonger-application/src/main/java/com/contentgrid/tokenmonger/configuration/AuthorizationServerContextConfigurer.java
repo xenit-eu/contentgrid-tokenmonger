@@ -14,7 +14,8 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
 @Accessors(fluent = true, chain = true)
 public class AuthorizationServerContextConfigurer extends AbstractHttpConfigurer<AuthorizationServerContextConfigurer, HttpSecurity> {
     private final AuthorizationServerSettings.Builder authorizationServerSettingsBuilder = AuthorizationServerSettings.builder()
-            .settings(Map::clear);
+            .settings(Map::clear)
+            .multipleIssuersAllowed(false);
 
 
     private AuthorizationServerContextConfigurer mapEndpoint(

@@ -34,7 +34,7 @@ dependencies {
 	}
 	implementation("org.springframework.security:spring-security-oauth2-authorization-server") {
 		version {
-			strictly '1.3.0-RC1'
+			strictly '1.3.0'
 		}
 	}
 	compileOnly 'org.projectlombok:lombok'
