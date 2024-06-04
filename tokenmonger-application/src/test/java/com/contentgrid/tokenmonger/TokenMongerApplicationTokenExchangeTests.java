@@ -232,6 +232,7 @@ class TokenMongerApplicationTokenExchangeTests {
         assertThat(authorizeRedirectUrl.getQueryParams()).containsKey("code");
         assertThat(authorizeRedirectUrl.getQueryParams()).containsEntry("state", List.of("1234"));
 
+        // Impersonating the extension
         mockMvc.perform(MockMvcRequestBuilders.post("/authentication/external/token")
                 .header("Host", "extensions.contentgrid.test")
                 .param("client_id", "test-client")
