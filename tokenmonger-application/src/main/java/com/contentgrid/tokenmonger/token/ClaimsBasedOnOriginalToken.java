@@ -1,36 +1,30 @@
 package com.contentgrid.tokenmonger.token;
 
-import java.util.Map;
-import java.util.function.BiPredicate;
+import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.core.ClaimAccessor;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet.Builder;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2TokenExchangeCompositeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 
 @RequiredArgsConstructor
-public class ClaimsFromOriginalToken implements OAuth2TokenCustomizer<JwtEncodingContext> {
-    private final BiPredicate<String, Object> claimFilter;
+public class ClaimsBasedOnOriginalToken implements OAuth2TokenCustomizer<JwtEncodingContext> {
+    private final BiConsumer<ClaimAccessor, Builder> configurer;
 
     @Override
     public void customize(JwtEncodingContext context) {
-        var originalClaims = originalTokenClaims(context.getPrincipal());
-
-        originalClaims.forEach((name, value) -> {
-            if(claimFilter.test(name, value)) {
-                context.getClaims().claim(name, value);
-            }
-        });
+        configurer.accept(originalTokenClaims(context.getPrincipal()), context.getClaims());
     }
 
-    private Map<String, Object> originalTokenClaims(Object principal) {
+    private ClaimAccessor originalTokenClaims(Object principal) {
         if(principal instanceof OAuth2TokenExchangeCompositeAuthenticationToken compositeAuthenticationToken) {
             principal = compositeAuthenticationToken.getSubject();
         }
         if(principal instanceof AbstractOAuth2TokenAuthenticationToken<?> oauth2AuthenticationToken) {
-            return oauth2AuthenticationToken.getTokenAttributes();
+            return oauth2AuthenticationToken::getTokenAttributes;
         }
         throw new IllegalArgumentException("Unsupported principal of type %s".formatted(principal.getClass()));
     }
-
 }

@@ -4,10 +4,14 @@ import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRe
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.core.ClaimAccessor;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
@@ -37,12 +41,36 @@ public class JwtTokenCustomizerBuilder {
         return customizer(new MayActFromRegisteredClient(extensionIssuer, repository));
     }
 
+    public JwtTokenCustomizerBuilder subjectBasedOnOriginalToken() {
+        return claimBasedOnOriginalToken((originalTokenClaims, tokenClaims) -> {
+            var issuer = originalTokenClaims.getClaimAsString(JwtClaimNames.ISS);
+            if(issuer == null) {
+                issuer = "";
+            }
+            var subject = originalTokenClaims.getClaimAsString(JwtClaimNames.SUB);
+            if(subject == null) {
+                subject = "";
+            }
+            tokenClaims.subject(issuer+"#"+subject);
+        });
+    }
+
+    public JwtTokenCustomizerBuilder claimBasedOnOriginalToken(BiConsumer<ClaimAccessor, JwtClaimsSet.Builder> configurer) {
+        return customizer(new ClaimsBasedOnOriginalToken(configurer));
+    }
+
     public JwtTokenCustomizerBuilder claimsFromOriginalToken(Predicate<String> predicate) {
         return claimsFromOriginalToken((claimName, claimValue) -> predicate.test(claimName));
     }
 
     public JwtTokenCustomizerBuilder claimsFromOriginalToken(BiPredicate<String, Object> predicate) {
-        return customizer(new ClaimsFromOriginalToken(predicate));
+        return claimBasedOnOriginalToken((claimAccessor, builder) -> {
+            claimAccessor.getClaims().forEach((name, value) -> {
+                if(predicate.test(name, value)) {
+                    builder.claim(name, value);
+                }
+            });
+        });
     }
 
     public OAuth2TokenCustomizer<JwtEncodingContext> build() {

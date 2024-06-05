@@ -17,6 +17,7 @@ import com.contentgrid.tokenmonger.token.RequireActorOAuth2TokenGenerator;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
+import java.util.List;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,7 +69,12 @@ public class ExtensionToAppConfiguration {
 		generator.setJwtCustomizer(JwtTokenCustomizerBuilder.create()
 				.actorsFromAuthentication()
 				.expiryFromOriginalToken()
-				.claimsFromOriginalToken(Set.of(JwtClaimNames.SUB)::contains)
+				.subjectBasedOnOriginalToken()
+				.claimBasedOnOriginalToken((originalTokenClaims, tokenClaims) -> {
+					tokenClaims.audience(List.of(
+							"contentgrid:application:"+originalTokenClaims.getClaimAsString("context:application:id")
+					));
+				})
 				.claimsFromOriginalToken(name -> name.startsWith("restrict:"))
 				.claimsFromOriginalToken(name -> name.startsWith("context:"))
 				.build());

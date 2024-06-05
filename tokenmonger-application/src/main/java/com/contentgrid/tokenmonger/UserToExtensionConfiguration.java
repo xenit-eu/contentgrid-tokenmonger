@@ -85,7 +85,11 @@ public class UserToExtensionConfiguration {
                         .actorsFromAuthentication()
                         .expiryFromOriginalToken()
                         .mayActFromRegisteredClient(extensionProperties.getIssuer().toURL(), extensionRepository)
-                        .claimsFromOriginalToken(JwtClaimNames.SUB::equals)
+                        .subjectBasedOnOriginalToken()
+                        .customizer(context -> {
+                            var extension = extensionRepository.findByClientId(context.getRegisteredClient().getClientId()).orElseThrow();
+                            context.getClaims().audience(List.of("contentgrid:extension:"+extension.getExtensionId()));
+                        })
                         .claimsFromOriginalToken(name -> name.startsWith("restrict:"))
                         .claimsFromOriginalToken(name -> name.startsWith("context:"))
                         .build()

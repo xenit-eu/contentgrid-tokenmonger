@@ -142,7 +142,8 @@ class TokenMongerApplicationTokenExchangeTests {
     static AccessTokenJwtMvcResultMatcher userToExtensionToken() {
         return accessToken(userToExtensionSigningKeys, jwt -> {
             assertThat(jwt.getIssuer()).isEqualTo(new URL("http://extensions.contentgrid.test/authentication/external"));
-            assertThat(jwt.getSubject()).isEqualTo("test-user");
+            assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
+            assertThat(jwt.getAudience()).containsExactly("contentgrid:extension:test-extension");
             assertThat(jwt.getClaimAsString("context:application:id")).isEqualTo("application-id");
             assertThat(jwt.getClaimAsStringList("context:application:domains")).isEqualTo(List.of("xyz.contentgrid.test"));
             assertThat(jwt.getClaimAsString("restrict:principal_claims")).isEqualTo("enc:ZZZZ");
@@ -345,7 +346,7 @@ class TokenMongerApplicationTokenExchangeTests {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(accessToken(extensionToAppSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/delegated");
-                    assertThat(jwt.getSubject()).isEqualTo("test-user");
+                    assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
                     assertThat(jwt.getClaimAsMap("act"))
                             .containsEntry("iss", "http://extensions.contentgrid.test/authentication/system")
                             .containsEntry("sub", "test-extension");
@@ -383,8 +384,9 @@ class TokenMongerApplicationTokenExchangeTests {
         var gatewayTokenForExtensionToAppToken = createGatewayJwt(jwt -> {
             jwt.claims(Map::clear);
 
-            jwt.issuer(extensionToAppToken.getClaimAsString(JwtClaimNames.ISS));
-            jwt.subject(extensionToAppToken.getSubject());
+            var splitSubject = extensionToAppToken.getSubject().split("#");
+            jwt.issuer(splitSubject[0]);
+            jwt.subject(splitSubject[1]);
             jwt.expiresAt(extensionToAppToken.getExpiresAt());
             jwt.claim("act", extensionToAppToken.getClaim("act"));
 
@@ -396,7 +398,7 @@ class TokenMongerApplicationTokenExchangeTests {
 
         var userToExtensionTokenBis = accessToken(userToExtensionSigningKeys, jwt -> {
             assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/external");
-            assertThat(jwt.getSubject()).isEqualTo("test-user");
+            assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
             assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
                     "iss", "http://extensions.contentgrid.test/authentication/system",
                     "sub", "test-extension"
@@ -419,7 +421,8 @@ class TokenMongerApplicationTokenExchangeTests {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(accessToken(extensionToAppSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/delegated");
-                    assertThat(jwt.getSubject()).isEqualTo("test-user");
+                    assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
+                    assertThat(jwt.getAudience()).containsExactly("contentgrid:application:application-id");
                     assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
                             "iss", "http://extensions.contentgrid.test/authentication/system",
                             "sub", "ml",
@@ -439,6 +442,7 @@ class TokenMongerApplicationTokenExchangeTests {
                 .andExpect(accessToken(extensionSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/system");
                     assertThat(jwt.getSubject()).isEqualTo("test-extension");
+                    assertThat(jwt.getAudience()).containsExactly("contentgrid:system:extensions");
                 }));
 
     }

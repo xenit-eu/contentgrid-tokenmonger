@@ -15,6 +15,7 @@ import com.contentgrid.tokenmonger.jwk.source.RandomJWKSelectionJWKSource;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -64,7 +65,8 @@ public class ExtensionConfiguration {
 		generator.setJwtCustomizer(token -> {
 			var extension = extensionRepository.findByClientId(token.getRegisteredClient().getClientId()).orElseThrow();
 			token.getClaims()
-					.subject(extension.getExtensionId());
+					.subject(extension.getExtensionId())
+					.audience(List.of("contentgrid:system:extensions"));
 		});
 
 		return generator;
