@@ -1,1 +1,30 @@
+pluginManagement {
+    plugins {
+        id 'org.springframework.boot' version "${springBootVersion}"
+        id 'io.freefair.lombok' version "${lombokPluginVersion}"
+        id 'org.ajoberstar.grgit' version '5.2.2'
+    }
+}
+
+plugins {
+    id 'org.ajoberstar.reckon.settings' version '0.18.3'
+    id 'eu.xenit.enterprise-conventions.oss' version '0.5.1'
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
+reckon {
+    defaultInferredScope = 'patch'
+    snapshots()
+    scopeCalc = calcScopeFromCommitMessages()
+    stageCalc = { inventory, targetNormal -> java.util.Optional.empty() }
+}
+
 rootProject.name = 'contentgrid-tokenmonger'
+
+include 'tokenmonger-application'
+include 'tokenmonger-dependencies'
