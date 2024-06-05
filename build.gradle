@@ -25,4 +25,23 @@ allprojects {
 			useJUnitPlatform()
 		}
 	}
+
+	pluginManager.withPlugin('jacoco') {
+		jacocoTestReport {
+			reports {
+				xml.required = true
+			}
+		}
+	}
+
+	pluginManager.withPlugin('org.sonarqube') {
+		sonarqube {
+			properties {
+				property "sonar.projectKey", "contentgrid-tokenmonger"
+				property "sonar.organization", "xenit-eu"
+				property "sonar.host.url", "https://sonarcloud.io"
+			}
+		}
+
+	}
 }
