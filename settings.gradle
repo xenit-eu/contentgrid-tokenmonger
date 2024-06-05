@@ -3,6 +3,7 @@ pluginManagement {
         id 'org.springframework.boot' version "${springBootVersion}"
         id 'io.freefair.lombok' version "${lombokPluginVersion}"
         id 'org.ajoberstar.grgit' version '5.2.2'
+        id 'org.sonarqube' version '5.0.0.4638'
     }
 }
 

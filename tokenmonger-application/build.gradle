@@ -1,7 +1,9 @@
 plugins {
 	id 'org.springframework.boot'
 	id 'java'
+	id 'jacoco'
 	id 'io.freefair.lombok'
+	id 'org.sonarqube'
 	id 'org.ajoberstar.grgit'
 }
 
@@ -19,6 +21,20 @@ springBoot {
 			additional = [
 					"git": grgit.describe(always: true, longDescr: true, tags: true)
 			]
+		}
+	}
+}
+
+bootBuildImage {
+	def dockerImageRepo = "ghcr.io/xenit-eu/contentgrid-tokenmonger"
+	imageName = "${dockerImageRepo}:${project.version}"
+	tags = "${project.version}".endsWith('SNAPSHOT') ? [ "${dockerImageRepo}:SNAPSHOT" ] : null
+
+	docker {
+		publishRegistry {
+			url = project.findProperty('DOCKER_PUBLISH_REGISTRY_URL')
+			username = project.findProperty('DOCKER_PUBLISH_REGISTRY_USERNAME')
+			password = project.findProperty('DOCKER_PUBLISH_REGISTRY_PASSWORD')
 		}
 	}
 }
@@ -42,5 +58,3 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:2.35.1'
 }
-
-
