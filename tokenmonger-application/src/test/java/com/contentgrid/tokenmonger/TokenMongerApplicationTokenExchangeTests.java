@@ -244,6 +244,16 @@ class TokenMongerApplicationTokenExchangeTests {
                 .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(userToExtensionToken());
 
+        // Validate that we cannot exchange the token twice
+        mockMvc.perform(MockMvcRequestBuilders.post("/authentication/external/token")
+                        .header("Host", "extensions.contentgrid.test")
+                        .param("client_id", "test-client")
+                        .param("client_secret", "test-client-secret")
+                        .param("grant_type", AuthorizationGrantType.AUTHORIZATION_CODE.getValue())
+                        .param("code", authorizeRedirectUrl.getQueryParams().getFirst("code"))
+                        .param("redirect_uri", "http://extension-system.test/oauth2")
+                ).andExpect(MockMvcResultMatchers.status().is4xxClientError());
+
     }
 
     @Test
