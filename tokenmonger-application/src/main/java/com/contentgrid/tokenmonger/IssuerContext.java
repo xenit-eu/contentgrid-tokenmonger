@@ -18,7 +18,8 @@ public @interface IssuerContext {
 
     enum IssuerType {
         USER_TO_EXTENSION,
-        EXTENSION_TO_APP
+        EXTENSION_TO_APP,
+        EXTENSION_SYSTEM
     }
 
 }

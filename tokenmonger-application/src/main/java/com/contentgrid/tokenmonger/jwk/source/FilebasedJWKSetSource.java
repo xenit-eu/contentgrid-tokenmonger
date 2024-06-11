@@ -15,6 +15,7 @@ import com.nimbusds.jose.jwk.source.JWKSetUnavailableException;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -58,28 +59,44 @@ public class FilebasedJWKSetSource implements JWKSetSource<SecurityContext> {
     }
 
     private static JWK createFromSigningKey(Resource resource, Date expirationTime) throws IOException, JOSEException {
-        var jwk = JWK.parseFromPEMEncodedObjects(resource.getContentAsString(StandardCharsets.UTF_8));
-        if(jwk instanceof RSAKey rsaKey) {
-            return new RSAKey.Builder(rsaKey)
-                    .keyIDFromThumbprint()
-                    .keyUse(KeyUse.SIGNATURE)
-                    .expirationTime(expirationTime)
-                    .build();
-        } else if(jwk instanceof ECKey ecKey) {
-            return new ECKey.Builder(ecKey)
-                    .keyIDFromThumbprint()
-                    .keyUse(KeyUse.SIGNATURE)
-                    .expirationTime(expirationTime)
-                    .build();
-        } else if(jwk instanceof OctetKeyPair octetKeyPair) {
-            return new OctetKeyPair.Builder(octetKeyPair)
-                    .keyIDFromThumbprint()
-                    .keyUse(KeyUse.SIGNATURE)
-                    .expirationTime(expirationTime)
-                    .build();
+        String signingKeyString = resource.getContentAsString(StandardCharsets.UTF_8);
+        JWK jwk;
+        if(signingKeyString.startsWith("{")) {
+            try {
+                jwk = JWK.parse(signingKeyString);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("Can not parse JWK %s: %s".formatted(resource, e.getMessage()), e);
+            }
         } else {
-            throw new IllegalArgumentException("Unsupported JWK key type %s; use RSA, EC or OKP".formatted(jwk.getKeyType()));
+            var decodedKey = JWK.parseFromPEMEncodedObjects(signingKeyString);
+            if(decodedKey instanceof RSAKey rsaKey) {
+                jwk = new RSAKey.Builder(rsaKey)
+                        .keyIDFromThumbprint()
+                        .keyUse(KeyUse.SIGNATURE)
+                        .expirationTime(expirationTime)
+                        .build();
+            } else if(decodedKey instanceof ECKey ecKey) {
+                jwk = new ECKey.Builder(ecKey)
+                        .keyIDFromThumbprint()
+                        .keyUse(KeyUse.SIGNATURE)
+                        .expirationTime(expirationTime)
+                        .build();
+            } else if(decodedKey instanceof OctetKeyPair octetKeyPair) {
+                jwk = new OctetKeyPair.Builder(octetKeyPair)
+                        .keyIDFromThumbprint()
+                        .keyUse(KeyUse.SIGNATURE)
+                        .expirationTime(expirationTime)
+                        .build();
+            } else {
+                throw new IllegalArgumentException("Unsupported JWK %s: Unsupported key type %s".formatted(resource, decodedKey.getKeyType()));
+            }
         }
+
+        if(jwk.toPublicJWK() == null) {
+            throw new IllegalArgumentException("Unsupported JWK %s: no public key available".formatted(resource));
+        }
+
+        return jwk;
     }
 
     @Override

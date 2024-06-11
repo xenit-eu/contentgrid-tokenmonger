@@ -5,17 +5,19 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.NonNull;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2TokenExchangeCompositeAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 
 public class UserToExtensionTokenExchangeAuthenticationToken extends AbstractAuthenticationToken {
     @NonNull
-    private final AbstractOAuth2TokenAuthenticationToken<?> userPrincipal;
+    private final Authentication userPrincipal;
 
     @NonNull
     @Getter
     private final Set<String> resources;
 
-    public UserToExtensionTokenExchangeAuthenticationToken(AbstractOAuth2TokenAuthenticationToken<?> principal, Set<String> resources) {
+    public UserToExtensionTokenExchangeAuthenticationToken(Authentication principal, Set<String> resources) {
         super(Collections.emptyList());
         this.userPrincipal = principal;
         this.resources = resources;
@@ -27,7 +29,7 @@ public class UserToExtensionTokenExchangeAuthenticationToken extends AbstractAut
     }
 
     @Override
-    public AbstractOAuth2TokenAuthenticationToken<?> getPrincipal() {
+    public Authentication getPrincipal() {
         return userPrincipal;
     }
 }

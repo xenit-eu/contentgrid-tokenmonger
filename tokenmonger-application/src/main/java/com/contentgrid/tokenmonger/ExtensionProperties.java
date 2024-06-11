@@ -9,7 +9,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties("contentgrid.tokenmonger.extension")
 @Data
-public class TokenMongerExtensionProperties {
+public class ExtensionProperties {
     private URI issuer;
     private Map<String, RegisteredExtension> registration = new HashMap<>();
+    private String activeSigningKeys;
+    private String retiredSigningKeys;
 }

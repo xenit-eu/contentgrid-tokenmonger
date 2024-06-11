@@ -4,13 +4,10 @@ import java.net.URI;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "contentgrid.tokenmonger.user-to-extension")
+@ConfigurationProperties(prefix = "contentgrid.tokenmonger.extension-to-app")
 @Data
-public class TokenMongerUserToExtensionProperties {
-    private String jwkSetUri;
+public class ExtensionToAppProperties {
     private URI issuer;
     private String activeSigningKeys;
     private String retiredSigningKeys;
 }
-
-

@@ -41,16 +41,12 @@ public class UserToExtensionTokenExchangeAuthenticationConverter implements Auth
             }
         }
 
-        var userAuthentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if(userAuthentication instanceof AbstractOAuth2TokenAuthenticationToken<?> oAuth2TokenAuthenticationToken) {
-            return new UserToExtensionTokenExchangeAuthenticationToken(
-                    oAuth2TokenAuthenticationToken,
-                    new HashSet<>(Arrays.asList(resources))
-            );
-        }
+        return new UserToExtensionTokenExchangeAuthenticationToken(
+                SecurityContextHolder.getContext().getAuthentication(),
+                new HashSet<>(Arrays.asList(resources))
+        );
 
-        return null;
     }
 
     private boolean isValidUri(String resource) {
