@@ -117,7 +117,7 @@ public class ExtensionConfiguration {
 				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
 				.csrf(csrf -> csrf.ignoringRequestMatchers(endpoints.getRequestMatcher()));
 
-		http.exceptionHandling((exceptions) -> exceptions
+		http.exceptionHandling(exceptions -> exceptions
 				.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
 		);
 

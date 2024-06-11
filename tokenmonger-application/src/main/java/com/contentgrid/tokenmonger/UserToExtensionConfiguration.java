@@ -106,7 +106,7 @@ public class UserToExtensionConfiguration {
 
         jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
                 JwtValidators.createDefaultWithValidators(
-                        new JwtClaimValidator<List<String>>(JwtClaimNames.AUD, (aud) -> aud != null && aud.contains("contentgrid:system:endpoints:authentication"))
+                        new JwtClaimValidator<List<String>>(JwtClaimNames.AUD, aud -> aud != null && aud.contains("contentgrid:system:endpoints:authentication"))
                 )
         ));
         return jwtDecoder;
@@ -246,7 +246,7 @@ public class UserToExtensionConfiguration {
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .csrf(csrf -> csrf.ignoringRequestMatchers(endpoints.getRequestMatcher()));
 
-        http.exceptionHandling((exceptions) -> exceptions
+        http.exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
         );
 

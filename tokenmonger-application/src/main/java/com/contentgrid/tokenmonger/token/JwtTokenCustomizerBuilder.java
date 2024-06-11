@@ -24,9 +24,9 @@ public class JwtTokenCustomizerBuilder {
     }
 
     public JwtTokenCustomizerBuilder customizer(OAuth2TokenCustomizer<JwtEncodingContext> customizer) {
-        var customizers = new ArrayList<>(this.customizers);
-        customizers.add(customizer);
-        return new JwtTokenCustomizerBuilder(customizers);
+        var customizersCopy = new ArrayList<>(customizers);
+        customizersCopy.add(customizer);
+        return new JwtTokenCustomizerBuilder(customizersCopy);
     }
 
     public JwtTokenCustomizerBuilder actorsFromAuthentication() {

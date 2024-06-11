@@ -18,13 +18,11 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.util.List;
-import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
@@ -130,7 +128,7 @@ public class ExtensionToAppConfiguration {
 				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
 				.csrf(csrf -> csrf.ignoringRequestMatchers(endpoints.getRequestMatcher()));
 
-		http.exceptionHandling((exceptions) -> exceptions
+		http.exceptionHandling(exceptions -> exceptions
 				.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
 		);
 
