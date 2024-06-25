@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,15 +37,21 @@ public class InMemoryRegisteredExtensionRepository implements RegisteredExtensio
                 .findFirst();
     }
 
+    @SneakyThrows
     private static Stream<String> resourceUriParts(URI uri) {
-        return Stream.iterate(uri, u -> !u.equals(u.resolve("..")), u -> {
-                    var currentDir = u.resolve(".");
-                    if(!Objects.equals(currentDir, u)) {
-                        return currentDir;
-                    } else {
-                        return u.resolve("..").resolve(".");
-                    }
-                })
+        var baseUriWithoutPath = new URI(uri.getScheme(), uri.getAuthority(), null, null, null);
+        var baseUriWithPath = baseUriWithoutPath.resolve("/");
+        return Stream.concat(
+                        Stream.iterate(uri, u -> !u.equals(baseUriWithoutPath) && !u.equals(baseUriWithPath), u -> {
+                            var currentDir = u.resolve(".");
+                            if(!Objects.equals(currentDir, u)) {
+                                return currentDir;
+                            } else {
+                                return u.resolve("..").resolve(".");
+                            }
+                        }),
+                        Stream.of(baseUriWithoutPath, baseUriWithPath)
+                )
                 .map(URI::toASCIIString);
     }
 
@@ -60,9 +67,13 @@ public class InMemoryRegisteredExtensionRepository implements RegisteredExtensio
                     "An extension with id '%s' is already registered".formatted(old.getExtensionId())));
 
             extension.getResourceUris().forEach(resourceUri -> {
+                var canonicalResourceUri = resourceUri.endsWith("/")?resourceUri:resourceUri+"/";
                 tryRegister(resourceUriMap, resourceUri, extension, (old) -> new IllegalArgumentException(
                         "The extension with id '%s' is already using resource URI '%s'".formatted(old.getExtensionId(),
                                 resourceUri)));
+                tryRegister(resourceUriMap, canonicalResourceUri, extension, (old) -> new IllegalArgumentException(
+                        "The extension with id '%s' is already using resource URI '%s'".formatted(old.getExtensionId(),
+                                canonicalResourceUri)));
             });
 
             extension.getClientIds().forEach(clientId -> {
