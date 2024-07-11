@@ -110,7 +110,7 @@ public class ExtensionToAppConfiguration {
 		http.with(new ClientAuthenticationConfigurer(), clientAuthenticationConfigurer -> {
 			clientAuthenticationConfigurer
 					.endpoint(endpoints.getTokenEndpoint())
-					.endpoint(endpoints.getTokenRevocationEndpoint())
+					//.endpoint(endpoints.getTokenRevocationEndpoint())
 					.clientSecret();
 		});
 		http.with(new TokenEndpointConfigurer(), tokenEndpoint -> {
