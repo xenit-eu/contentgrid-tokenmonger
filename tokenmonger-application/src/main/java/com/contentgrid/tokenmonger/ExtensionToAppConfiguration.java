@@ -5,6 +5,7 @@ import com.contentgrid.tokenmonger.configuration.AuthorizationServerContextConfi
 import com.contentgrid.tokenmonger.configuration.AuthorizationServerMetadataEndpointConfigurer;
 import com.contentgrid.tokenmonger.configuration.ClientAuthenticationConfigurer;
 import com.contentgrid.tokenmonger.configuration.EndpointConfiguration;
+import com.contentgrid.tokenmonger.configuration.JwkSetEndpointConfigurer;
 import com.contentgrid.tokenmonger.configuration.ServicesConfigurer;
 import com.contentgrid.tokenmonger.configuration.TokenEndpointConfigurer;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
@@ -110,7 +111,7 @@ public class ExtensionToAppConfiguration {
 		http.with(new ClientAuthenticationConfigurer(), clientAuthenticationConfigurer -> {
 			clientAuthenticationConfigurer
 					.endpoint(endpoints.getTokenEndpoint())
-					.endpoint(endpoints.getTokenRevocationEndpoint())
+					//.endpoint(endpoints.getTokenRevocationEndpoint())
 					.clientSecret();
 		});
 		http.with(new TokenEndpointConfigurer(), tokenEndpoint -> {
@@ -118,6 +119,11 @@ public class ExtensionToAppConfiguration {
 					.withTokenExchange()
 					.tokenEndpoint(endpoints.getTokenEndpoint())
 			;
+		});
+
+		http.with(new JwkSetEndpointConfigurer(), jwkSetEndpoint -> {
+			jwkSetEndpoint
+					.jwkSetEndpoint(endpoints.getJwkSetEndpoint());
 		});
 
 		http.with(new AuthorizationServerMetadataEndpointConfigurer(), authorizationServerMetadataConfigurer -> {
