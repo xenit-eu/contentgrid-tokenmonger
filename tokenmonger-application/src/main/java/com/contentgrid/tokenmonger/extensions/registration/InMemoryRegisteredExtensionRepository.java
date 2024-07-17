@@ -17,7 +17,6 @@ public class InMemoryRegisteredExtensionRepository implements RegisteredExtensio
 
     private final Map<String, RegisteredExtension> byIdMap = new HashMap<>();
     private final Map<String, RegisteredExtension> resourceUriMap = new HashMap<>();
-    private final Map<String, RegisteredExtension> clientIdMap = new HashMap<>();
 
     public InMemoryRegisteredExtensionRepository(Collection<RegisteredExtension> registeredExtensions) {
         for (RegisteredExtension registeredExtension : registeredExtensions) {
@@ -56,11 +55,6 @@ public class InMemoryRegisteredExtensionRepository implements RegisteredExtensio
     }
 
     @Override
-    public Optional<RegisteredExtension> findByClientId(String clientId) {
-        return Optional.ofNullable(clientIdMap.get(clientId));
-    }
-
-    @Override
     public void save(RegisteredExtension extension) {
         try {
             tryRegister(byIdMap, extension.getExtensionId(), extension, (old) -> new IllegalArgumentException(
@@ -76,19 +70,11 @@ public class InMemoryRegisteredExtensionRepository implements RegisteredExtensio
                                 canonicalResourceUri)));
             });
 
-            extension.getClientIds().forEach(clientId -> {
-                tryRegister(clientIdMap, clientId, extension, (old) -> new IllegalArgumentException(
-                        "The extension with id '%s' is already using client id '%s'".formatted(old.getExtensionId(),
-                                clientId)));
-            });
         } catch(IllegalArgumentException ex) {
             // rollback all changes; remove registration for extension
             byIdMap.remove(extension.getExtensionId(), extension);
             extension.getResourceUris().forEach(resourceUri -> {
                 resourceUriMap.remove(resourceUri, extension);
-            });
-            extension.getClientIds().forEach(clientId -> {
-                clientIdMap.remove(clientId, extension);
             });
             throw ex;
         }

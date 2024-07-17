@@ -10,7 +10,5 @@ import lombok.Value;
 public class RegisteredExtension {
     String extensionId;
 
-    Set<String> clientIds;
-
     Set<String> resourceUris;
 }

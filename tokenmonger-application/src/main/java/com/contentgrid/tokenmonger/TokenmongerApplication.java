@@ -1,7 +1,14 @@
 package com.contentgrid.tokenmonger;
 
+import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
+import com.contentgrid.tokenmonger.application.InMemoryApplicationRepository;
+import com.contentgrid.tokenmonger.configuration.CommonConfigurationFactory;
 import com.contentgrid.tokenmonger.extensions.registration.InMemoryRegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
+import com.contentgrid.tokenmonger.jwk.source.JWKSourceWrapperBuilder;
+import com.contentgrid.tokenmonger.oauth2.jwt.JwtDecoderBuilder;
+import com.contentgrid.tokenmonger.oauth2.token.decoder.JwtTokenDecoder;
+import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
 import com.nimbusds.jose.jwk.JWKMatcher;
 import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.KeyUse;
@@ -14,11 +21,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
-import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @SpringBootApplication
-@EnableConfigurationProperties({UserToExtensionProperties.class, ExtensionToAppProperties.class, ExtensionProperties.class})
+@EnableConfigurationProperties({ApplicationRegistrationProperties.class, ExtensionRegistrationProperties.class, TokenmongerProperties.class})
 public class TokenmongerApplication {
 
 	public static void main(String[] args) {
@@ -26,14 +33,34 @@ public class TokenmongerApplication {
 	}
 
 	@Bean
-	OAuth2AuthorizationService authorizationService() {
-		return new InMemoryOAuth2AuthorizationService();
+	RegisteredExtensionRepository inMemoryRegisteredExtensionRepository(
+			ExtensionRegistrationProperties extensionRegistrationProperties
+	) {
+		return new InMemoryRegisteredExtensionRepository(extensionRegistrationProperties.getRegistration().values());
 	}
 
 	@Bean
-	RegisteredExtensionRepository inMemoryRegisteredExtensionRepository(ExtensionProperties extensionProperties) {
-		return new InMemoryRegisteredExtensionRepository(extensionProperties.getRegistration().values());
+	InMemoryApplicationRepository inMemoryApplicationRepository(
+			ApplicationRegistrationProperties applicationRegistrationProperties
+	) {
+		return new InMemoryApplicationRepository(applicationRegistrationProperties.getRegistration().values());
 	}
+
+	@Bean
+	CommonConfigurationFactory configurationFactory(ResourcePatternResolver resourcePatternResolver) {
+		return new CommonConfigurationFactory(resourcePatternResolver);
+	}
+
+
+	@Bean
+	@IssuerContext(IssuerType.USER_APPLICATION_ACCESS_TOKEN)
+	TokenDecoder<Jwt> uaatDecoder(
+			CommonConfigurationFactory configurationFactory,
+			TokenmongerProperties tokenmongerProperties
+	) {
+		return configurationFactory.tokenDecoder(tokenmongerProperties.getUserApplicationAccess());
+	}
+
 
 	@Bean
 	InitializingBean verifyJWKSourcesAtStartup(
@@ -41,12 +68,15 @@ public class TokenmongerApplication {
 	) {
 		return () -> {
 			for (JWKSource<SecurityContext> jwkSource : jwkSources) {
-				var signingKeys = jwkSource.get(new JWKSelector(new JWKMatcher.Builder()
+				var signingKeys = JWKSourceWrapperBuilder.from(jwkSource)
+						.filterExpired()
+						.build()
+						.get(new JWKSelector(new JWKMatcher.Builder()
 						.keyUse(KeyUse.SIGNATURE)
 						.build()), new SimpleSecurityContext());
 
 				if(signingKeys.isEmpty()) {
-					throw new RuntimeException("All JWK sources must have signing keys. Missing signing keys in source %s".formatted(jwkSource));
+					throw new RuntimeException("All JWK sources must have active signing keys. Missing signing keys in source %s".formatted(jwkSource));
 				}
 			}
 		};

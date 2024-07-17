@@ -1,13 +1,17 @@
 package com.contentgrid.tokenmonger.jwk.source;
 
+import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.KeySourceException;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

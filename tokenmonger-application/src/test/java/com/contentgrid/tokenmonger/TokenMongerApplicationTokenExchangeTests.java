@@ -4,16 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
-import com.contentgrid.tokenmonger.authentication.AuthorizationGrantExtensions;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSetBasedJWKSource;
-import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
-import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import java.net.URL;
 import java.time.Instant;
@@ -23,99 +18,28 @@ import java.util.Map;
 import java.util.function.Consumer;
 import lombok.SneakyThrows;
 import org.assertj.core.api.ThrowingConsumer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@SpringBootTest({
-        "spring.profiles.active=test"
-})
 @AutoConfigureMockMvc(printOnlyOnFailure = false)
-class TokenMongerApplicationTokenExchangeTests {
+class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplicationIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
-
-    static WireMockServer wireMockServer;
-
-    static JWKSet gatewaySigningKeys = new JWKSet(JWKGenerator.createRandomJWK());
-
-    static JWKSet userToExtensionSigningKeys = new JWKSet(JWKGenerator.createRandomJWK());
-
-    static JWKSet extensionToAppSigningKeys = new JWKSet(JWKGenerator.createRandomJWK());
-
-    static JWKSet extensionSigningKeys = new JWKSet(JWKGenerator.createRandomJWK());
-
-    @TestConfiguration
-    public static class TestConfig {
-        @Bean
-        @IssuerContext(IssuerType.USER_TO_EXTENSION)
-        @Primary
-        public JWKSource<SecurityContext> mockUserToExtensionJwkSource() {
-            return new JWKSetBasedJWKSource<>(new StaticJWKSetSource(userToExtensionSigningKeys));
-        }
-
-        @Bean
-        @IssuerContext(IssuerType.EXTENSION_TO_APP)
-        @Primary
-        public JWKSource<SecurityContext> mockExtensionToAppJwkSource() {
-            return new JWKSetBasedJWKSource<>(new StaticJWKSetSource(extensionToAppSigningKeys));
-        }
-
-        @Bean
-        @IssuerContext(IssuerType.EXTENSION_SYSTEM)
-        @Primary
-        public JWKSource<SecurityContext> mockExtensionJwkSource() {
-            return new JWKSetBasedJWKSource<>(new StaticJWKSetSource(extensionSigningKeys));
-        }
-
-    }
-
-    @BeforeAll
-    static void setupWiremock() {
-        wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
-        wireMockServer.start();
-    }
-
-    @AfterAll
-    static void shutdownWiremock() {
-        wireMockServer.stop();
-    }
-
-    @DynamicPropertySource
-    static void configureMockServerPorts(DynamicPropertyRegistry registry) {
-        registry.add("contentgrid.tokenmonger.user-to-extension.jwk-set-uri", () -> "http://localhost:"+wireMockServer.port()+"/gateway-jwks.json");
-
-    }
-
-    @BeforeEach
-    void setupMockGateway() {
-        wireMockServer.stubFor(WireMock.get("/gateway-jwks.json")
-                .willReturn(WireMock.okJson(gatewaySigningKeys.toString()))
-        );
-    }
 
 
     static Jwt createGatewayJwt() {
@@ -139,8 +63,26 @@ class TokenMongerApplicationTokenExchangeTests {
         return gatewayEncoder.encode(JwtEncoderParameters.from(jwtClaimsSetBuilder.build()));
     }
 
+    static Jwt createEitJwt() {
+        return createEitJwt(jwt -> {
+
+        });
+    }
+
+    static Jwt createEitJwt(Consumer<JwtClaimsSet.Builder> configurer) {
+        var eitEncoder = new NimbusJwtEncoder(new JWKSetBasedJWKSource<>(new StaticJWKSetSource(eitSigningKeys)));
+
+        var jwtClaimsSetBuilder = JwtClaimsSet.builder()
+                .issuer("https://auth.contentgrid.test/realms/extensions")
+                .subject("test-extension");
+
+        configurer.accept(jwtClaimsSetBuilder);
+
+        return eitEncoder.encode(JwtEncoderParameters.from(jwtClaimsSetBuilder.build()));
+    }
+
     static AccessTokenJwtMvcResultMatcher userToExtensionToken() {
-        return accessToken(userToExtensionSigningKeys, jwt -> {
+        return accessToken(ueatSigningKeys, jwt -> {
             assertThat(jwt.getIssuer()).isEqualTo(new URL("http://extensions.contentgrid.test/authentication/external"));
             assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
             assertThat(jwt.getAudience()).containsExactly("contentgrid:extension:test-extension");
@@ -175,17 +117,17 @@ class TokenMongerApplicationTokenExchangeTests {
         return MockMvcRequestBuilders.post("/.contentgrid/authentication/external/token")
                 .header("Host", "xyz.contentgrid.test")
                 .header("Authorization", "Bearer "+authorizationJwt.getTokenValue())
-                .param("grant_type", AuthorizationGrantExtensions.CONTENTGRID_EXTENSION_TOKEN_GRANT_TYPE.getValue());
+                .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue());
     }
 
-    static MockHttpServletRequestBuilder tokenExchange() {
-        return MockMvcRequestBuilders.post("/authentication/delegated/token")
+    static MockHttpServletRequestBuilder tokenExchange(String uri) {
+        return MockMvcRequestBuilders.post(uri)
                 .header("Host", "extensions.contentgrid.test")
                 .param("grant_type", AuthorizationGrantType.TOKEN_EXCHANGE.getValue());
     }
 
-    static MockHttpServletRequestBuilder tokenExchange(Jwt subjectToken, Jwt actorToken) {
-        var requestBuilder = tokenExchange();
+    static MockHttpServletRequestBuilder tokenExchange(String uri, Jwt subjectToken, Jwt actorToken) {
+        var requestBuilder = tokenExchange(uri);
         if(subjectToken != null) {
                 requestBuilder  = requestBuilder.param("subject_token", subjectToken.getTokenValue())
                     .param("subject_token_type", "urn:ietf:params:oauth:token-type:access_token");
@@ -194,9 +136,7 @@ class TokenMongerApplicationTokenExchangeTests {
                 requestBuilder = requestBuilder.param("actor_token", actorToken.getTokenValue())
                     .param("actor_token_type", "urn:ietf:params:oauth:token-type:access_token");
         }
-        return requestBuilder.param("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
-                .param("client_id", "test-client")
-                .param("client_secret", "test-client-secret");
+        return requestBuilder.param("requested_token_type", "urn:ietf:params:oauth:token-type:access_token");
     }
 
     static MockHttpServletRequestBuilder clientCredentials(String clientId, String clientSecret) {
@@ -214,15 +154,16 @@ class TokenMongerApplicationTokenExchangeTests {
         EXTENSION_SERVICE_ACCOUNT
     }
 
-    private Jwt retrieveToken(TokenType tokenType) throws Exception {
+    private Jwt retrieveToken(IssuerType tokenType) throws Exception {
         return switch (tokenType) {
-            case USER -> createGatewayJwt();
-            case USER_TO_EXTENSION -> accessToken(userToExtensionSigningKeys, jwt -> {}).apply(
-                    mockMvc.perform(contentGridTokenGrant(retrieveToken(TokenType.USER))
+            case USER_APPLICATION_ACCESS_TOKEN -> createGatewayJwt();
+            case USER_EXTENSION_ACCESS_TOKEN -> accessToken(ueatSigningKeys, jwt -> {}).apply(
+                    mockMvc.perform(contentGridTokenGrant(retrieveToken(IssuerType.USER_APPLICATION_ACCESS_TOKEN))
                             .param("resource", "http://extension-system.test/xyz")
                     ).andExpect(MockMvcResultMatchers.status().isOk()).andReturn());
-            case EXTENSION_SERVICE_ACCOUNT -> accessToken(extensionSigningKeys, jwt -> {}).apply(mockMvc.perform(clientCredentials("test-client", "test-client-secret")).andExpect(MockMvcResultMatchers.status().isOk()).andReturn());
-            case EXTENSION_TO_APP -> accessToken(extensionToAppSigningKeys, jwt -> {}).apply(mockMvc.perform(tokenExchange(retrieveToken(TokenType.USER_TO_EXTENSION), retrieveToken(TokenType.EXTENSION_SERVICE_ACCOUNT))).andExpect(MockMvcResultMatchers.status().isOk()).andReturn());
+            case EXTENSION_IDENTITY_TOKEN -> createEitJwt();
+            case EXTENSION_APPLICATION_ACCESS_TOKEN -> accessToken(eaatSigningKeys, jwt -> {}).apply(mockMvc.perform(tokenExchange("/authentication/system/token", retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN), null)).andExpect(MockMvcResultMatchers.status().isOk()).andReturn());
+            case EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN -> accessToken(edaatSigningKeys, jwt -> {}).apply(mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN), retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))).andExpect(MockMvcResultMatchers.status().isOk()).andReturn());
         };
     }
 
@@ -267,7 +208,7 @@ class TokenMongerApplicationTokenExchangeTests {
                         .param("resource", "http://extension-system.test/xyz")
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(accessToken(userToExtensionSigningKeys, jwt -> {
+                .andExpect(accessToken(ueatSigningKeys, jwt -> {
                     assertThat(jwt.getExpiresAt()).isCloseTo(expiryTime, within(1, ChronoUnit.SECONDS));
                 }));
     }
@@ -281,7 +222,7 @@ class TokenMongerApplicationTokenExchangeTests {
                         .param("resource", "http://extension-system.test/xyz")
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(accessToken(userToExtensionSigningKeys, jwt -> {
+                .andExpect(accessToken(ueatSigningKeys, jwt -> {
                     assertThat(jwt.getExpiresAt()).isCloseTo(Instant.now().plus(5, ChronoUnit.MINUTES), within(30, ChronoUnit.SECONDS));
                 }));
     }
@@ -335,16 +276,16 @@ class TokenMongerApplicationTokenExchangeTests {
                         .header("Host", "extensions.contentgrid.test")
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(userToExtensionSigningKeys.toString(true)));
+                .andExpect(MockMvcResultMatchers.content().json(ueatSigningKeys.toString(true)));
     }
 
 
     @Test
     void exchange_extensionToApp_success() throws Exception {
-        var userToExtensionToken = retrieveToken(TokenType.USER_TO_EXTENSION);
-        mockMvc.perform(tokenExchange(userToExtensionToken, retrieveToken(TokenType.EXTENSION_SERVICE_ACCOUNT)))
+        var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+        mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken, retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(accessToken(extensionToAppSigningKeys, jwt -> {
+                .andExpect(accessToken(edaatSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/delegated");
                     assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
                     assertThat(jwt.getClaimAsMap("act"))
@@ -361,25 +302,25 @@ class TokenMongerApplicationTokenExchangeTests {
 
     @Test
     void exchange_extensionToApp_withoutActor() throws Exception {
-        mockMvc.perform(tokenExchange(retrieveToken(TokenType.USER_TO_EXTENSION), null))
+        mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN), null))
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
     }
 
     @Test
     void exchange_extensionToApp_extensionTokenAsSubject() throws Exception {
-        mockMvc.perform(tokenExchange(retrieveToken(TokenType.EXTENSION_SERVICE_ACCOUNT), null))
+        mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN), null))
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
     }
 
     @Test
     void exchange_extensionToApp_extensionToAppTokenAsSubject() throws Exception {
-        mockMvc.perform(tokenExchange(retrieveToken(TokenType.EXTENSION_TO_APP), null))
+        mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN), null))
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
     }
 
     @Test
     void exchange_extensionToApp_recursively_success() throws Exception {
-        var extensionToAppToken = retrieveToken(TokenType.EXTENSION_TO_APP);
+        var extensionToAppToken = retrieveToken(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN);
 
         var gatewayTokenForExtensionToAppToken = createGatewayJwt(jwt -> {
             jwt.claims(Map::clear);
@@ -396,7 +337,7 @@ class TokenMongerApplicationTokenExchangeTests {
                     .claim("restrict:principal_claims", "enc:YYYY");
         });
 
-        var userToExtensionTokenBis = accessToken(userToExtensionSigningKeys, jwt -> {
+        var userToExtensionTokenBis = accessToken(ueatSigningKeys, jwt -> {
             assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/external");
             assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
             assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
@@ -413,13 +354,13 @@ class TokenMongerApplicationTokenExchangeTests {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn());
 
-        var extensionTokenBis = accessToken(extensionSigningKeys, jwt -> {}).apply(mockMvc.perform(clientCredentials("machine-learning", "machine-learning-secret"))
+        var extensionTokenBis = accessToken(eaatSigningKeys, jwt -> {}).apply(mockMvc.perform(clientCredentials("machine-learning", "machine-learning-secret"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn());
 
-        mockMvc.perform(tokenExchange(userToExtensionTokenBis, extensionTokenBis))
+        mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionTokenBis, extensionTokenBis))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(accessToken(extensionToAppSigningKeys, jwt -> {
+                .andExpect(accessToken(edaatSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/delegated");
                     assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
                     assertThat(jwt.getAudience()).containsExactly("contentgrid:application:application-id");
@@ -439,7 +380,7 @@ class TokenMongerApplicationTokenExchangeTests {
     void clientCredentials_extension_success() throws Exception {
         mockMvc.perform(clientCredentials("test-client", "test-client-secret"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(accessToken(extensionSigningKeys, jwt -> {
+                .andExpect(accessToken(eaatSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/system");
                     assertThat(jwt.getSubject()).isEqualTo("test-extension");
                     assertThat(jwt.getAudience()).containsExactly("contentgrid:system:extensions");

@@ -16,10 +16,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public @interface IssuerContext {
     IssuerType value();
 
-    enum IssuerType {
-        USER_TO_EXTENSION,
-        EXTENSION_TO_APP,
-        EXTENSION_SYSTEM
+    public enum IssuerType {
+        USER_APPLICATION_ACCESS_TOKEN,
+        EXTENSION_IDENTITY_TOKEN,
+        USER_EXTENSION_ACCESS_TOKEN,
+        EXTENSION_APPLICATION_ACCESS_TOKEN,
+        EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN,
     }
 
 }

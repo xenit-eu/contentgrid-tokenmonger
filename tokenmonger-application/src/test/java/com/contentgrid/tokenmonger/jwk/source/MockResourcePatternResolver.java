@@ -3,11 +3,13 @@ package com.contentgrid.tokenmonger.jwk.source;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.Singular;
 import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.util.AntPathMatcher;
@@ -15,7 +17,7 @@ import org.springframework.util.PathMatcher;
 
 @RequiredArgsConstructor
 @Builder
-class MockResourcePatternResolver implements ResourcePatternResolver {
+public class MockResourcePatternResolver implements ResourcePatternResolver {
 
     @Singular
     private final Map<String, Resource> resources;
@@ -60,6 +62,12 @@ class MockResourcePatternResolver implements ResourcePatternResolver {
         @Override
         public boolean exists() {
             return false;
+        }
+    }
+
+    public static class MockResourcePatternResolverBuilder {
+        public MockResourcePatternResolverBuilder textResource(String resourceKey, String resource) {
+            return resource(resourceKey, new ByteArrayResource(resource.getBytes(StandardCharsets.UTF_8)));
         }
     }
 }

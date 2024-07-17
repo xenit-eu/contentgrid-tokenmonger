@@ -34,27 +34,26 @@ spring:
 
 contentgrid:
   tokenmonger:
-    user-to-extension:
-      #jwk-set-uri: http://localhost:9081/actuator/jwks/authentication
-      issuer: http://extensions.contentgrid.test/authentication/external
-      #active-signing-keys: file:signing-keys/active.pem
-      #retired-signing-keys: file:signing-keys/*.pem
-    extension-to-app:
-      issuer: http://extensions.contentgrid.test/authentication/delegated
-      #active-signing-keys: file:signing-keys/active.pem
-      #retired-signing-keys: file:signing-keys/*.pem
-    extension:
+    extension-identity:
+      issuer: https://auth.contentgrid.test/realms/extensions
+
+    extension-application-access:
       issuer: http://extensions.contentgrid.test/authentication/system
+      active-signing-keys: file:eaat.json
+
+    user-extension-access:
+      issuer: http://extensions.contentgrid.test/authentication/external
+      active-signing-keys: file:ueat.json
       registration:
         test:
           extension-id: test-extension
-          client-ids:
-            - test-client
           resource-uris:
             - http://extension-system.test/
         ml:
           extension-id: ml
-          client-ids:
-            - machine-learning
           resource-uris:
             - http://ml-system.test/
+
+    extension-delegated-application-access:
+      issuer: http://extensions.contentgrid.test/authentication/delegated
+      active-signing-keys: file:edaat.json
