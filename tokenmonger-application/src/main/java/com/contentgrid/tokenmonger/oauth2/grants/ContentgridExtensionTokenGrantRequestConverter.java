@@ -20,7 +20,10 @@ public class ContentgridExtensionTokenGrantRequestConverter implements Converter
             return null;
         }
 
-        var resource = GrantUtilities.convertResourceUri(wrapper.requireSingleValue(OAuth2ParameterNames.RESOURCE, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST)));
+        var resource = wrapper.getValues(OAuth2ParameterNames.RESOURCE)
+                .stream()
+                .map(GrantUtilities::convertResourceUri)
+                .toList();
 
         return ContentgridExtensionTokenGrantRequest.builder()
                 .grantType(grantType)

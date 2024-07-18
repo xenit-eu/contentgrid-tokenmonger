@@ -241,11 +241,9 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/delegated");
                     assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
                     assertThat(jwt.getClaimAsMap("act"))
-                            .containsEntry("iss", "http://extensions.contentgrid.test/authentication/system")
+                            .containsEntry("iss", "https://auth.contentgrid.test/realms/extensions")
                             .containsEntry("sub", "test-extension");
 
-                    assertThat(jwt.getClaimAsString("context:application:id")).isEqualTo("application-id");
-                    assertThat(jwt.getClaimAsStringList("context:application:domains")).isEqualTo(List.of("xyz.contentgrid.test"));
                     assertThat(jwt.getClaimAsString("restrict:principal_claims")).isEqualTo("enc:ZZZZ");
                     assertThat(jwt.getExpiresAt()).isNotNull()
                             .isCloseTo(userToExtensionToken.getExpiresAt(), within(1, ChronoUnit.SECONDS));
@@ -293,11 +291,11 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/external");
             assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
             assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
-                    "iss", "http://extensions.contentgrid.test/authentication/system",
+                    "iss", "https://auth.contentgrid.test/realms/extensions",
                     "sub", "test-extension"
             ));
             assertThat(jwt.getClaimAsMap("may_act")).isEqualTo(Map.of(
-                    "iss", "http://extensions.contentgrid.test/authentication/system",
+                    "iss", "https://auth.contentgrid.test/realms/extensions",
                     "sub", "ml"
             ));
         }).apply(mockMvc.perform(contentGridTokenGrant(gatewayTokenForExtensionToAppToken)
@@ -317,10 +315,10 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
                     assertThat(jwt.getAudience()).containsExactly("contentgrid:application:application-id");
                     assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
-                            "iss", "http://extensions.contentgrid.test/authentication/system",
+                            "iss", "https://auth.contentgrid.test/realms/extensions",
                             "sub", "ml",
                             "act", Map.of(
-                                    "iss", "http://extensions.contentgrid.test/authentication/system",
+                                    "iss", "https://auth.contentgrid.test/realms/extensions",
                                     "sub", "test-extension"
                             )
                     ));

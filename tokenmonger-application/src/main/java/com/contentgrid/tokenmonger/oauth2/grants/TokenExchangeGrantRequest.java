@@ -11,7 +11,7 @@ import lombok.Value;
 
 @Builder(access = AccessLevel.PACKAGE)
 @Value
-public class TokenExchangeGrantRequest implements GrantRequest, GrantRequest.HasScope {
+public class TokenExchangeGrantRequest implements GrantRequest, GrantRequest.HasScope, GrantRequest.HasResource {
     @NonNull
     GrantType grantType;
 

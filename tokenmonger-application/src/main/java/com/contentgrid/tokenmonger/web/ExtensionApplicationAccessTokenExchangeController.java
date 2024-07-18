@@ -6,7 +6,10 @@ import com.contentgrid.tokenmonger.TokenExpiryPolicy;
 import com.contentgrid.tokenmonger.application.Application;
 import com.contentgrid.tokenmonger.application.ApplicationRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
+import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
+import com.contentgrid.tokenmonger.web.validator.ApplicationResourceAllowedGrantRequestValidator;
+import com.contentgrid.tokenmonger.web.validator.ApplicationResourceAllowedGrantRequestValidator.ApplicationResourceInformation;
 import com.contentgrid.tokenmonger.web.validator.NoActorTokenExchangeGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.NoAudienceGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.NoScopeGrantRequestValidator;
@@ -24,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("authentication/system")
-public class ExtensionApplicationAccessTokenExchangeController extends AbstractTokenExchangeController<Context> {
+public class ExtensionApplicationAccessTokenExchangeController extends AbstractTokenGrantController<TokenExchangeGrantRequest, Context> {
 
     private final TokenExpiryPolicy tokenExpiryPolicy;
 
@@ -43,6 +46,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
                         new NoAudienceGrantRequestValidator<>(),
                         new NoScopeGrantRequestValidator<>(),
                         new SingleApplicationResourceGrantRequestValidator<>(applicationRepository),
+                        new ApplicationResourceAllowedGrantRequestValidator<>(),
                         new SubjectTokenGrantRequestValidator<>(eitDecoder)
                 ));
         this.tokenExpiryPolicy = tokenExpiryPolicy;
@@ -64,7 +68,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
     }
 
     @Data
-    protected static class Context implements ApplicationInformation, SubjectTokenInfo {
+    protected static class Context implements ApplicationInformation, ApplicationResourceInformation, SubjectTokenInfo {
         private Application application;
         private List<String> applicationResourcePaths;
         private Jwt subjectToken;

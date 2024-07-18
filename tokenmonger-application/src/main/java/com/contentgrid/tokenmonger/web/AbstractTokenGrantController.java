@@ -1,10 +1,10 @@
 package com.contentgrid.tokenmonger.web;
 
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse.TokenType;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
-import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.web.annotation.JwkSetEndpointMapping;
 import com.contentgrid.tokenmonger.web.annotation.OAuthServerConfigurationEndpointMapping;
 import com.contentgrid.tokenmonger.web.annotation.TokenEndpointMapping;
@@ -19,15 +19,15 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RequiredArgsConstructor
-abstract class AbstractTokenExchangeController<C> {
+abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
 
     protected final OAuth2ServerConfiguration oAuth2ServerConfiguration;
-    private final List<GrantRequestValidator<? super TokenExchangeGrantRequest, C>> validators;
+    private final List<GrantRequestValidator<? super T, C>> validators;
 
 
     @TokenEndpointMapping
     public GrantResponse token(
-            @RequestBody TokenExchangeGrantRequest tokenExchangeGrantRequest
+            @RequestBody T tokenExchangeGrantRequest
     ) {
         var context = createContext();
 

@@ -3,6 +3,7 @@ package com.contentgrid.tokenmonger.web.validator;
 import com.contentgrid.tokenmonger.application.Application;
 import com.contentgrid.tokenmonger.application.ApplicationRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest.HasResource;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.web.validator.SingleApplicationResourceGrantRequestValidator.ApplicationInformation;
 import java.net.URI;
@@ -14,12 +15,12 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
 @RequiredArgsConstructor
-public class SingleApplicationResourceGrantRequestValidator<C extends ApplicationInformation> implements GrantRequestValidator<TokenExchangeGrantRequest, C> {
+public class SingleApplicationResourceGrantRequestValidator<C extends ApplicationInformation> implements GrantRequestValidator<HasResource, C> {
 
     private final ApplicationRepository applicationRepository;
 
     @Override
-    public void validate(TokenExchangeGrantRequest grantRequest, C context) {
+    public void validate(HasResource grantRequest, C context) {
         var targetApps = new HashSet<Application>();
 
         for (URI resourceUri : grantRequest.getResource()) {
@@ -34,18 +35,10 @@ public class SingleApplicationResourceGrantRequestValidator<C extends Applicatio
             default -> throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "'resource' URIs can not map to different applications");
         };
         context.setApplication(targetApp);
-        context.setApplicationResourcePaths(grantRequest.getResource().stream().map(this::extractPath).toList());
-    }
-
-    @SneakyThrows
-    private String extractPath(URI uri) {
-        return new URI(null, null, uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
     }
 
     public interface ApplicationInformation {
         void setApplication(Application application);
         Application getApplication();
-        void setApplicationResourcePaths(List<String> paths);
-        List<String> getApplicationResourcePaths();
     }
 }

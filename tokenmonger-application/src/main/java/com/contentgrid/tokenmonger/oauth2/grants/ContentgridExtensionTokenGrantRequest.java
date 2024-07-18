@@ -9,12 +9,12 @@ import lombok.Value;
 
 @Value
 @Builder(access = AccessLevel.PACKAGE)
-public class ContentgridExtensionTokenGrantRequest implements GrantRequest, GrantRequest.HasScope {
+public class ContentgridExtensionTokenGrantRequest implements GrantRequest, GrantRequest.HasScope, GrantRequest.HasResource {
     @NonNull
     GrantType grantType;
 
     @NonNull
-    URI resource;
+    List<URI> resource;
 
     List<String> scope;
 }

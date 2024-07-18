@@ -25,8 +25,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationRegistrationProperties.class, ExtensionRegistrationProperties.class, TokenmongerProperties.class})
@@ -72,6 +77,29 @@ public class TokenmongerApplication {
 		return configurationFactory.tokenDecoder(tokenmongerProperties.getUserApplicationAccess());
 	}
 
+	@Bean
+	@IssuerContext(IssuerType.EXTENSION_IDENTITY_TOKEN)
+	public TokenDecoder<Jwt> eitTokenDecoder(
+			CommonConfigurationFactory configurationFactory,
+			TokenmongerProperties tokenmongerProperties
+	) {
+		return configurationFactory.tokenDecoder(tokenmongerProperties.getExtensionIdentity());
+	}
+
+	@Bean
+	@Order(3)
+	public SecurityFilterChain eaatSecurityFilterChain(
+			HttpSecurity http,
+			ExtensionRegistrationProperties extensionRegistrationProperties
+	) throws Exception {
+		return http
+				.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+				.csrf(AbstractHttpConfigurer::disable)
+				.exceptionHandling(exceptions -> exceptions
+						.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+				)
+				.build();
+	}
 
 	@Bean
 	InitializingBean verifyJWKSourcesAtStartup(

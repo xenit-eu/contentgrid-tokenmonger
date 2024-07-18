@@ -50,27 +50,4 @@ public class ExtensionApplicationAccessTokenConfiguration {
 		return configurationFactory.tokenDecoder(tokenmongerProperties.getExtensionApplicationAccess(), jwkSource);
 	}
 
-	@Bean
-	@IssuerContext(IssuerType.EXTENSION_IDENTITY_TOKEN)
-	public TokenDecoder<Jwt> eitTokenDecoder(
-			TokenmongerProperties tokenmongerProperties
-	) {
-		return configurationFactory.tokenDecoder(tokenmongerProperties.getExtensionIdentity());
-	}
-
-	@Bean
-	@Order(3)
-	public SecurityFilterChain eaatSecurityFilterChain(
-			HttpSecurity http,
-			ExtensionRegistrationProperties extensionRegistrationProperties
-	) throws Exception {
-		return http
-				.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-				.csrf(AbstractHttpConfigurer::disable)
-				.exceptionHandling(exceptions -> exceptions
-						.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
-				)
-				.build();
-	}
-
 }

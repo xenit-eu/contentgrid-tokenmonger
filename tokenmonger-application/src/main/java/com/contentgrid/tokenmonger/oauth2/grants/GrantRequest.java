@@ -1,5 +1,6 @@
 package com.contentgrid.tokenmonger.oauth2.grants;
 
+import java.net.URI;
 import java.util.List;
 
 public interface GrantRequest {
@@ -7,5 +8,9 @@ public interface GrantRequest {
 
     interface HasScope extends GrantRequest {
         List<String> getScope();
+    }
+
+    interface HasResource extends GrantRequest {
+        List<URI> getResource();
     }
 }

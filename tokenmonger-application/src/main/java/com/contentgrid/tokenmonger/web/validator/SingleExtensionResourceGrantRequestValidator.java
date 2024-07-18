@@ -3,6 +3,7 @@ package com.contentgrid.tokenmonger.web.validator;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtension;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest.HasResource;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator.ExtensionInformation;
 import java.net.URI;
@@ -13,12 +14,12 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
 @RequiredArgsConstructor
-public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInformation> implements GrantRequestValidator<TokenExchangeGrantRequest, C> {
+public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInformation> implements GrantRequestValidator<HasResource, C> {
 
     private final RegisteredExtensionRepository registeredExtensionRepository;
 
     @Override
-    public void validate(TokenExchangeGrantRequest grantRequest, C context) {
+    public void validate(HasResource grantRequest, C context) {
         var targetApps = new HashSet<RegisteredExtension>();
 
         for (URI resourceUri : grantRequest.getResource()) {
