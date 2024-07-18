@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.within;
 
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
+import com.contentgrid.tokenmonger.test.mockmvc.EncodeToWwwFormRequestPostProcessor;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSetBasedJWKSource;
@@ -21,7 +22,6 @@ import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -33,7 +33,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @AutoConfigureMockMvc(printOnlyOnFailure = false)
 class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplicationIntegrationTest {
@@ -92,7 +91,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             assertThat(jwt.getExpiresAt()).isNotNull()
                     .isBeforeOrEqualTo(Instant.now().plus(5, ChronoUnit.MINUTES));
             assertThat(jwt.getClaimAsMap("may_act")).isEqualTo(Map.of(
-                    "iss", "http://extensions.contentgrid.test/authentication/system",
+                    "iss", "https://auth.contentgrid.test/realms/extensions",
                     "sub", "test-extension"
             ));
         });
@@ -117,13 +116,15 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         return MockMvcRequestBuilders.post("/.contentgrid/authentication/external/token")
                 .header("Host", "xyz.contentgrid.test")
                 .header("Authorization", "Bearer "+authorizationJwt.getTokenValue())
-                .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue());
+                .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue())
+                .with(new EncodeToWwwFormRequestPostProcessor());
     }
 
     static MockHttpServletRequestBuilder tokenExchange(String uri) {
         return MockMvcRequestBuilders.post(uri)
                 .header("Host", "extensions.contentgrid.test")
-                .param("grant_type", AuthorizationGrantType.TOKEN_EXCHANGE.getValue());
+                .param("grant_type", AuthorizationGrantType.TOKEN_EXCHANGE.getValue())
+                .with(new EncodeToWwwFormRequestPostProcessor());
     }
 
     static MockHttpServletRequestBuilder tokenExchange(String uri, Jwt subjectToken, Jwt actorToken) {
@@ -145,13 +146,6 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 .param("grant_type", AuthorizationGrantType.CLIENT_CREDENTIALS.getValue())
                 .param("client_id", clientId)
                 .param("client_secret", clientSecret);
-    }
-
-    enum TokenType {
-        USER,
-        USER_TO_EXTENSION,
-        EXTENSION_TO_APP,
-        EXTENSION_SERVICE_ACCOUNT
     }
 
     private Jwt retrieveToken(IssuerType tokenType) throws Exception {
@@ -227,48 +221,6 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 }));
     }
 
-    @Test
-    void authenticate_userToExtension_success() throws Exception {
-        var gatewayToken = createGatewayJwt();
-
-        var authorizeResponse = mockMvc.perform(MockMvcRequestBuilders.get("/.contentgrid/authentication/external/authorize")
-                .header("Host", "xyz.contentgrid.test")
-                .header("Authorization", "Bearer "+gatewayToken.getTokenValue())
-                .queryParam("response_type", "code")
-                .queryParam("client_id", "test-client")
-                .queryParam("redirect_uri", "http://extension-system.test/oauth2")
-                .queryParam("state", "1234")
-        ).andExpect(MockMvcResultMatchers.status().is3xxRedirection())
-                .andReturn();
-
-        var authorizeRedirectUrl = UriComponentsBuilder.fromUriString(authorizeResponse.getResponse().getRedirectedUrl()).build();
-
-        assertThat(authorizeRedirectUrl.getQueryParams()).containsKey("code");
-        assertThat(authorizeRedirectUrl.getQueryParams()).containsEntry("state", List.of("1234"));
-
-        // Impersonating the extension
-        mockMvc.perform(MockMvcRequestBuilders.post("/authentication/external/token")
-                .header("Host", "extensions.contentgrid.test")
-                .param("client_id", "test-client")
-                .param("client_secret", "test-client-secret")
-                .param("grant_type", AuthorizationGrantType.AUTHORIZATION_CODE.getValue())
-                .param("code", authorizeRedirectUrl.getQueryParams().getFirst("code"))
-                        .param("redirect_uri", "http://extension-system.test/oauth2")
-        ).andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(userToExtensionToken());
-
-        // Validate that we cannot exchange the token twice
-        mockMvc.perform(MockMvcRequestBuilders.post("/authentication/external/token")
-                        .header("Host", "extensions.contentgrid.test")
-                        .param("client_id", "test-client")
-                        .param("client_secret", "test-client-secret")
-                        .param("grant_type", AuthorizationGrantType.AUTHORIZATION_CODE.getValue())
-                        .param("code", authorizeRedirectUrl.getQueryParams().getFirst("code"))
-                        .param("redirect_uri", "http://extension-system.test/oauth2")
-                ).andExpect(MockMvcResultMatchers.status().is4xxClientError());
-
-    }
 
     @Test
     void jwks_userToExtension() throws Exception {
@@ -354,9 +306,9 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andReturn());
 
-        var extensionTokenBis = accessToken(eaatSigningKeys, jwt -> {}).apply(mockMvc.perform(clientCredentials("machine-learning", "machine-learning-secret"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andReturn());
+        var extensionTokenBis = createEitJwt(jwt -> {
+            jwt.subject("ml");
+        });
 
         mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionTokenBis, extensionTokenBis))
                 .andExpect(MockMvcResultMatchers.status().isOk())
@@ -377,14 +329,35 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
     }
 
     @Test
-    void clientCredentials_extension_success() throws Exception {
-        mockMvc.perform(clientCredentials("test-client", "test-client-secret"))
+    void exchange_extensionApplicationAccessToken_success() throws Exception {
+        var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+
+        mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                        .param("resource", "https://test1.app.contentgrid.example/xyz")
+                )
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(accessToken(eaatSigningKeys, jwt -> {
                     assertThat(jwt.getIssuer()).hasToString("http://extensions.contentgrid.test/authentication/system");
                     assertThat(jwt.getSubject()).isEqualTo("test-extension");
-                    assertThat(jwt.getAudience()).containsExactly("contentgrid:system:extensions");
+                    assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
                 }));
+    }
+
+    @Test
+    void exchange_extensionApplicationAccessToken_missingResource() throws Exception {
+        var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+
+        mockMvc.perform(tokenExchange("/authentication/system/token", eit, null))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @Test
+    void exchange_extensionApplicationAccessToken_unknownApplication() throws Exception {
+        var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+
+        mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                        .param("resource", "https://unknown-app.invalid"))
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
 
     }
 }

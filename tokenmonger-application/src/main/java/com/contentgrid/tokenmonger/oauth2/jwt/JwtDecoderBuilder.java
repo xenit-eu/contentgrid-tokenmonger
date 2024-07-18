@@ -5,15 +5,24 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder.JwkSetUriJwtDecoderBuilder;
@@ -26,6 +35,7 @@ public class JwtDecoderBuilder {
     private String issuer;
     private String jwkSetUri;
     private JWKSource<SecurityContext> jwkSource;
+    private List<String> audience;
     private Set<JWSAlgorithm> jwsAlgorithms = new HashSet<>();
 
     public JwtDecoderBuilder jwsAlgorithm(JWSAlgorithm jwsAlgorithm) {
@@ -57,10 +67,18 @@ public class JwtDecoderBuilder {
             decoder = createIssuerOrJwkSetBasedDecoder();
         }
 
-        var defaultValidator = issuer != null ?
-                JwtValidators.createDefaultWithIssuer(issuer) :
-                JwtValidators.createDefault();
-        decoder.setJwtValidator(defaultValidator);
+        var validators = new ArrayList<OAuth2TokenValidator<Jwt>>();
+        validators.add(JwtValidators.createDefault());
+
+        if(issuer != null) {
+            validators.add(new JwtIssuerValidator(issuer));
+        }
+
+        if(audience != null) {
+            validators.add(new JwtClaimValidator<List<String>>(JwtClaimNames.AUD, aud -> aud != null && !Collections.disjoint(aud, audience)));
+        }
+
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(validators));
         return decoder;
     }
 

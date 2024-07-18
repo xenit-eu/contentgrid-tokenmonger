@@ -4,6 +4,7 @@ import com.nimbusds.jose.JWSAlgorithm;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -43,6 +44,8 @@ public class TokenmongerProperties {
 
         @URL
         private String jwkSetUri;
+
+        private List<String> audience;
 
     }
 

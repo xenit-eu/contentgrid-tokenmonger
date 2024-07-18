@@ -34,6 +34,17 @@ spring:
 
 contentgrid:
   tokenmonger:
+    applications:
+      registration:
+        test1:
+          application-id: test1
+          domains:
+            - test1.app.contentgrid.example
+            - my-domain.app.contentgrid.example
+        test2:
+          application-id: test2
+          domains:
+            - test2.app.contentgrid.example
     extension-identity:
       issuer: https://auth.contentgrid.test/realms/extensions
 

@@ -15,6 +15,10 @@ import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
@@ -51,6 +55,13 @@ public class TokenmongerApplication {
 		return new CommonConfigurationFactory(resourcePatternResolver);
 	}
 
+	@Bean
+	TokenExpiryPolicy tokenExpiryPolicy() {
+		return new TokenExpiryPolicy(
+				Duration.of(5, ChronoUnit.MINUTES),
+				Clock.systemUTC()
+		);
+	}
 
 	@Bean
 	@IssuerContext(IssuerType.USER_APPLICATION_ACCESS_TOKEN)

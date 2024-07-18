@@ -2,6 +2,7 @@ package com.contentgrid.tokenmonger.web;
 
 import com.contentgrid.tokenmonger.IssuerContext;
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
+import com.contentgrid.tokenmonger.TokenExpiryPolicy;
 import com.contentgrid.tokenmonger.application.Application;
 import com.contentgrid.tokenmonger.application.ApplicationRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
@@ -25,12 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("authentication/system")
 public class ExtensionApplicationAccessTokenExchangeController extends AbstractTokenExchangeController<Context> {
 
+    private final TokenExpiryPolicy tokenExpiryPolicy;
+
     public ExtensionApplicationAccessTokenExchangeController(
             @IssuerContext(IssuerType.EXTENSION_APPLICATION_ACCESS_TOKEN)
             OAuth2ServerConfiguration eaatServerConfiguration,
             @IssuerContext(IssuerType.EXTENSION_IDENTITY_TOKEN)
             TokenDecoder<Jwt> eitDecoder,
-            ApplicationRepository applicationRepository
+            ApplicationRepository applicationRepository,
+            TokenExpiryPolicy tokenExpiryPolicy
     ) {
         super(
                 eaatServerConfiguration,
@@ -41,6 +45,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
                         new SingleApplicationResourceGrantRequestValidator<>(applicationRepository),
                         new SubjectTokenGrantRequestValidator<>(eitDecoder)
                 ));
+        this.tokenExpiryPolicy = tokenExpiryPolicy;
     }
 
     @Override
@@ -54,7 +59,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
                 .subject(context.getSubjectToken().getSubject())
                 .audience(List.of("contentgrid:application:"+context.getApplication().getApplicationId()))
                 .claim("context:application:resource", context.getApplicationResourcePaths())
-                .expiresAt(context.getSubjectToken().getExpiresAt())
+                .expiresAt(tokenExpiryPolicy.getExpiry(context.getSubjectToken().getExpiresAt()))
                 .build();
     }
 

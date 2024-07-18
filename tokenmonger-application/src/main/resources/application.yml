@@ -9,4 +9,7 @@ management:
     port: 8081
 
 
+contentgrid.tokenmonger:
+  user-application-access:
+    audience: contentgrid:system:endpoints:authentication
 

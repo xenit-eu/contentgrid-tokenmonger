@@ -25,7 +25,6 @@ public class GrantRequestHttpMessageConverter implements HttpMessageConverter<Gr
 
     private static final TypeDescriptor MULTI_VALUE_MAP_TYPE_DESCRIPTOR = new TypeDescriptor(
             ResolvableType.forClassWithGenerics(MultiValueMap.class, String.class, String.class), null, null);
-    private static final TypeDescriptor GRANT_REQUEST_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(GrantRequest.class);
 
     private final FormHttpMessageConverter formHttpMessageConverter = new FormHttpMessageConverter();
     {
@@ -61,8 +60,7 @@ public class GrantRequestHttpMessageConverter implements HttpMessageConverter<Gr
         );
 
         try {
-            var conversionResult = conversionService.convert(multiValueMap, MULTI_VALUE_MAP_TYPE_DESCRIPTOR,
-                    GRANT_REQUEST_TYPE_DESCRIPTOR);
+            var conversionResult = conversionService.convert(multiValueMap, MULTI_VALUE_MAP_TYPE_DESCRIPTOR, TypeDescriptor.valueOf(clazz));
             if(conversionResult == null) {
                 throw new OAuth2ErrorException(OAuth2ErrorCodes.UNSUPPORTED_GRANT_TYPE);
             }

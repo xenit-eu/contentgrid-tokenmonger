@@ -15,6 +15,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 
 @RequiredArgsConstructor
 public class CommonConfigurationFactory {
@@ -63,16 +64,20 @@ public class CommonConfigurationFactory {
         );
     }
 
+    public JwtDecoder jwtDecoder(
+            TokenDecoderProperties tokenDecoderProperties
+    ) {
+        return JwtDecoderBuilder.create()
+                .issuer(tokenDecoderProperties.getIssuer())
+                .jwkSetUri(tokenDecoderProperties.getJwkSetUri())
+                .jwsAlgorithms(tokenDecoderProperties.getJwsAlgorithms())
+                .audience(tokenDecoderProperties.getAudience())
+                .build();
+    }
+
     public TokenDecoder<Jwt> tokenDecoder(
             TokenDecoderProperties tokenDecoderProperties
     ) {
-
-        return new JwtTokenDecoder(
-                JwtDecoderBuilder.create()
-                        .issuer(tokenDecoderProperties.getIssuer())
-                        .jwkSetUri(tokenDecoderProperties.getJwkSetUri())
-                        .jwsAlgorithms(tokenDecoderProperties.getJwsAlgorithms())
-                        .build()
-        );
+        return new JwtTokenDecoder(jwtDecoder(tokenDecoderProperties));
     }
 }
