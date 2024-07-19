@@ -9,7 +9,11 @@ import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRe
 import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
 import com.contentgrid.tokenmonger.oauth2.grants.ContentgridExtensionTokenGrantRequest;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
 import com.contentgrid.tokenmonger.web.UserExtensionAccessTokenController.Context;
+import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping;
+import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping.Operation;
+import com.contentgrid.tokenmonger.web.mapping.TokenEndpointMapping;
 import com.contentgrid.tokenmonger.web.validator.NoScopeGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator.ExtensionInformation;
@@ -27,11 +31,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping({
-        ".contentgrid/authentication/external",
-        "authentication/external"
-})
+@IssuerContext(IssuerType.USER_EXTENSION_ACCESS_TOKEN)
 public class UserExtensionAccessTokenController extends AbstractTokenGrantController<ContentgridExtensionTokenGrantRequest, Context> {
+
+    public static final String CONTENTGRID_AUTHENTICATION_EXTERNAL_TOKEN_PATH = "/.contentgrid/authentication/external/token";
     private final TokenExpiryPolicy tokenExpiryPolicy;
     private final TokenmongerProperties tokenmongerProperties;
 
@@ -53,6 +56,13 @@ public class UserExtensionAccessTokenController extends AbstractTokenGrantContro
         this.tokenmongerProperties = tokenmongerProperties;
     }
 
+    @Override
+    @TokenEndpointMapping
+    @IssuerContextCombinationMapping(Operation.IGNORE)
+    @RequestMapping(path = CONTENTGRID_AUTHENTICATION_EXTERNAL_TOKEN_PATH)
+    public GrantResponse token(ContentgridExtensionTokenGrantRequest tokenExchangeGrantRequest) {
+        return super.token(tokenExchangeGrantRequest);
+    }
 
     @Override
     protected Context createContext() {

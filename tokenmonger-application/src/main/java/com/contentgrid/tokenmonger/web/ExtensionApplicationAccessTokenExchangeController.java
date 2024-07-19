@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("authentication/system")
+@IssuerContext(IssuerType.EXTENSION_APPLICATION_ACCESS_TOKEN)
 public class ExtensionApplicationAccessTokenExchangeController extends AbstractTokenGrantController<TokenExchangeGrantRequest, Context> {
 
     private final TokenExpiryPolicy tokenExpiryPolicy;

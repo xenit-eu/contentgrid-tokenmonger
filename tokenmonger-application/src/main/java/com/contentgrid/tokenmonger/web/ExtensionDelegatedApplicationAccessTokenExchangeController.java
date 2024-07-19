@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("authentication/delegated")
+@IssuerContext(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN)
 public class ExtensionDelegatedApplicationAccessTokenExchangeController extends AbstractTokenGrantController<TokenExchangeGrantRequest, Context> {
 
     private final TokenExpiryPolicy tokenExpiryPolicy;

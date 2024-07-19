@@ -9,6 +9,7 @@ import com.contentgrid.tokenmonger.jwk.source.JWKSourceWrapperBuilder;
 import com.contentgrid.tokenmonger.oauth2.jwt.JwtDecoderBuilder;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.JwtTokenDecoder;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
+import com.contentgrid.tokenmonger.web.mapping.TokenmongerRequestMappingHandlerMapping;
 import com.nimbusds.jose.jwk.JWKMatcher;
 import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.KeyUse;
@@ -23,6 +24,7 @@ import java.util.List;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
@@ -32,6 +34,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationRegistrationProperties.class, ExtensionRegistrationProperties.class, TokenmongerProperties.class})
@@ -99,6 +103,16 @@ public class TokenmongerApplication {
 						.authenticationEntryPoint(new Http403ForbiddenEntryPoint())
 				)
 				.build();
+	}
+
+	@Bean
+	WebMvcRegistrations webMvcRegistrations() {
+		return new WebMvcRegistrations() {
+			@Override
+			public RequestMappingHandlerMapping getRequestMappingHandlerMapping() {
+				return new TokenmongerRequestMappingHandlerMapping();
+			}
+		};
 	}
 
 	@Bean

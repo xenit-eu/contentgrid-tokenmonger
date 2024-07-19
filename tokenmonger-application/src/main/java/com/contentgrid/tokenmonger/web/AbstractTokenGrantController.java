@@ -5,9 +5,9 @@ import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse.TokenType;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
-import com.contentgrid.tokenmonger.web.annotation.JwkSetEndpointMapping;
-import com.contentgrid.tokenmonger.web.annotation.OAuthServerConfigurationEndpointMapping;
-import com.contentgrid.tokenmonger.web.annotation.TokenEndpointMapping;
+import com.contentgrid.tokenmonger.web.mapping.JwkSetEndpointMapping;
+import com.contentgrid.tokenmonger.web.mapping.OAuthServerConfigurationEndpointMapping;
+import com.contentgrid.tokenmonger.web.mapping.TokenEndpointMapping;
 import com.contentgrid.tokenmonger.web.validator.GrantRequestValidator;
 import com.contentgrid.tokenmonger.oauth2.token.Token;
 import com.contentgrid.tokenmonger.oauth2.token.TokenTypeIdentifier;
@@ -54,6 +54,8 @@ abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
     public OAuth2ServerMetadata oAuth2ServerMetadata() {
         return OAuth2ServerMetadata.builder()
                 .issuer(oAuth2ServerConfiguration.getIssuer())
+                .tokenEndpoint(oAuth2ServerConfiguration.getIssuer()+"/token")
+                .jwksUri(oAuth2ServerConfiguration.getIssuer()+"/jwks")
                 .grantTypesSupported(List.of(GrantType.TOKEN_EXCHANGE))
                 .build();
     }

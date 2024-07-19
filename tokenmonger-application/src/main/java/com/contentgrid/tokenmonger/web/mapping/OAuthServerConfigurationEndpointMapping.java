@@ -1,5 +1,6 @@
-package com.contentgrid.tokenmonger.web.annotation;
+package com.contentgrid.tokenmonger.web.mapping;
 
+import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping.Operation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,12 +13,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Retention(RetentionPolicy.RUNTIME)
 @RequestMapping(
         method = RequestMethod.GET,
-        value = "jwks",
-        produces = {
-                "application/jwk-set+json",
-                MediaType.APPLICATION_JSON_VALUE,
-        }
+        path = ".well-known/oauth-authorization-server",
+        produces =  MediaType.APPLICATION_JSON_VALUE
 )
-public @interface JwkSetEndpointMapping {
+@IssuerContextCombinationMapping(Operation.APPEND)
+public @interface OAuthServerConfigurationEndpointMapping {
 
 }
