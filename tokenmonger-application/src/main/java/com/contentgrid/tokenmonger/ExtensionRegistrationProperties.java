@@ -8,7 +8,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-@ConfigurationProperties("contentgrid.tokenmonger.user-extension-access")
+@ConfigurationProperties("contentgrid.tokenmonger.extensions")
 @Data
 @Validated
 public class ExtensionRegistrationProperties {

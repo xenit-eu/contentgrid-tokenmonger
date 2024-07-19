@@ -45,6 +45,16 @@ contentgrid:
           application-id: test2
           domains:
             - test2.app.contentgrid.example
+    extensions:
+      registration:
+        test:
+          extension-id: test-extension
+          resource-uris:
+            - http://extension-system.test/
+        ml:
+          extension-id: ml
+          resource-uris:
+            - http://ml-system.test/
     extension-identity:
       issuer: https://auth.contentgrid.test/realms/extensions
 
@@ -55,15 +65,6 @@ contentgrid:
     user-extension-access:
       issuer: http://extensions.contentgrid.test/authentication/external
       active-signing-keys: file:ueat.json
-      registration:
-        test:
-          extension-id: test-extension
-          resource-uris:
-            - http://extension-system.test/
-        ml:
-          extension-id: ml
-          resource-uris:
-            - http://ml-system.test/
 
     extension-delegated-application-access:
       issuer: http://extensions.contentgrid.test/authentication/delegated
