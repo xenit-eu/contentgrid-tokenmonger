@@ -57,6 +57,11 @@ public class ExtensionDelegatedApplicationAccessTokenExchangeController extends 
     }
 
     @Override
+    protected String getDescription() {
+        return "Tokens to authenticate an extension to an application on behalf of a user";
+    }
+
+    @Override
     protected Context createContext() {
         return new Context();
     }

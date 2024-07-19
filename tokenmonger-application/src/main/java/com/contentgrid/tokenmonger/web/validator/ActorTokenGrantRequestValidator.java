@@ -18,6 +18,11 @@ public class ActorTokenGrantRequestValidator<C extends ActorTokenInfo> implement
     private final TokenDecoder<Jwt> tokenDecoder;
 
     @Override
+    public String getDescription() {
+        return "Actor token is required and must be authorized by the subject token.";
+    }
+
+    @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
         var actorToken = tokenDecoder.decode(grantRequest.getActorToken());
 

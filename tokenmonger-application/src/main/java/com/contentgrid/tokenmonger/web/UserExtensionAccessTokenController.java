@@ -10,10 +10,11 @@ import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
 import com.contentgrid.tokenmonger.oauth2.grants.ContentgridExtensionTokenGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
+import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
 import com.contentgrid.tokenmonger.web.UserExtensionAccessTokenController.Context;
 import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping;
 import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping.Operation;
-import com.contentgrid.tokenmonger.web.mapping.TokenEndpointMapping;
+import com.contentgrid.tokenmonger.web.mapping.OAuthServerConfigurationEndpointMapping;
 import com.contentgrid.tokenmonger.web.validator.NoScopeGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator.ExtensionInformation;
@@ -21,13 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.Data;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -57,11 +59,28 @@ public class UserExtensionAccessTokenController extends AbstractTokenGrantContro
     }
 
     @Override
-    @TokenEndpointMapping
     @IssuerContextCombinationMapping(Operation.IGNORE)
-    @RequestMapping(path = CONTENTGRID_AUTHENTICATION_EXTERNAL_TOKEN_PATH)
+    @PostMapping(
+            path = CONTENTGRID_AUTHENTICATION_EXTERNAL_TOKEN_PATH,
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public GrantResponse token(ContentgridExtensionTokenGrantRequest tokenExchangeGrantRequest) {
         return super.token(tokenExchangeGrantRequest);
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Tokens to authenticate an end-user to an extension. The token endpoint is available at '<application root>/"+CONTENTGRID_AUTHENTICATION_EXTERNAL_TOKEN_PATH+"'";
+    }
+
+    @Override
+    @OAuthServerConfigurationEndpointMapping
+    public OAuth2ServerMetadata oAuth2ServerMetadata() {
+        return super.oAuth2ServerMetadata().toBuilder()
+                .tokenEndpoint(null)
+                .grantTypesSupported(List.of(GrantType.CONTENTGRID_EXTENSION))
+                .build();
     }
 
     @Override

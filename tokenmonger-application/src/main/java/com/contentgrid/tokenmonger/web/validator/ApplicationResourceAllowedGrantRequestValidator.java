@@ -15,6 +15,11 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 public class ApplicationResourceAllowedGrantRequestValidator<C extends ApplicationInformation & ApplicationResourceInformation> implements GrantRequestValidator<HasResource, C> {
 
     @Override
+    public String getDescription() {
+        return "All 'resource' parameters must be valid Application URIs for one application";
+    }
+
+    @Override
     public void validate(HasResource grantRequest, C context) {
         var allowedDomains = context.getApplication().getDomains();
         context.setApplicationResourcePaths(

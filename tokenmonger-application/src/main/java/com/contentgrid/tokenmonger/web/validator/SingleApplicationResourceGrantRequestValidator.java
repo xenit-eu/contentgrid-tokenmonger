@@ -4,13 +4,10 @@ import com.contentgrid.tokenmonger.application.Application;
 import com.contentgrid.tokenmonger.application.ApplicationRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest.HasResource;
-import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.web.validator.SingleApplicationResourceGrantRequestValidator.ApplicationInformation;
 import java.net.URI;
 import java.util.HashSet;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
@@ -18,6 +15,11 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 public class SingleApplicationResourceGrantRequestValidator<C extends ApplicationInformation> implements GrantRequestValidator<HasResource, C> {
 
     private final ApplicationRepository applicationRepository;
+
+    @Override
+    public String getDescription() {
+        return "At least one 'resource' parameter must be present";
+    }
 
     @Override
     public void validate(HasResource grantRequest, C context) {

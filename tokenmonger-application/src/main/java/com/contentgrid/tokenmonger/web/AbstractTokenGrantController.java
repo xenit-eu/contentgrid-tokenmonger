@@ -5,6 +5,8 @@ import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse.TokenType;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
+import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping;
+import com.contentgrid.tokenmonger.web.mapping.IssuerContextCombinationMapping.Operation;
 import com.contentgrid.tokenmonger.web.mapping.JwkSetEndpointMapping;
 import com.contentgrid.tokenmonger.web.mapping.OAuthServerConfigurationEndpointMapping;
 import com.contentgrid.tokenmonger.web.mapping.TokenEndpointMapping;
@@ -12,18 +14,25 @@ import com.contentgrid.tokenmonger.web.validator.GrantRequestValidator;
 import com.contentgrid.tokenmonger.oauth2.token.Token;
 import com.contentgrid.tokenmonger.oauth2.token.TokenTypeIdentifier;
 import com.nimbusds.jose.jwk.JWKSet;
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.servlet.ModelAndView;
+
 
 @RequiredArgsConstructor
 abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
 
     protected final OAuth2ServerConfiguration oAuth2ServerConfiguration;
     private final List<GrantRequestValidator<? super T, C>> validators;
-
 
     @TokenEndpointMapping
     public GrantResponse token(
@@ -46,6 +55,8 @@ abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
                 .build();
     }
 
+    protected abstract String getDescription();
+
     protected abstract C createContext();
 
     protected abstract JwtClaimsSet createToken(C context);
@@ -60,8 +71,34 @@ abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
                 .build();
     }
 
+
+    @GetMapping(
+            path = ".well-known/openid-configuration",
+            produces =  MediaType.APPLICATION_JSON_VALUE
+    )
+    @IssuerContextCombinationMapping(Operation.PREPEND)
+    public final ResponseEntity<Void> alternateOAuth2ServerMetadata() {
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                .location(oAuth2ServerConfiguration.getOAuthServerMetadataUri())
+                .build();
+    }
+
     @JwkSetEndpointMapping
     public JWKSet jwkSet() {
         return oAuth2ServerConfiguration.getJwkSet().toPublicJWKSet();
+    }
+
+    @GetMapping(
+            path = "",
+            produces = MediaType.TEXT_HTML_VALUE
+    )
+    @IssuerContextCombinationMapping(Operation.PREPEND)
+    public ModelAndView issuerInformation() {
+        return new ModelAndView("issuer-root", Map.of(
+                "description", getDescription(),
+                "serverMetadata", oAuth2ServerMetadata(),
+                "serverConfiguration", oAuth2ServerConfiguration,
+                "validators", validators
+        ));
     }
 }

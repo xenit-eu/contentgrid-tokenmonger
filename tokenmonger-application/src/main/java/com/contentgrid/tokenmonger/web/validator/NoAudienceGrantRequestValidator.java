@@ -8,9 +8,14 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 public class NoAudienceGrantRequestValidator<C> implements GrantRequestValidator<TokenExchangeGrantRequest, C> {
 
     @Override
+    public String getDescription() {
+        return "The 'audience' parameter must be absent";
+    }
+
+    @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
         if(!grantRequest.getAudience().isEmpty()) {
-            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "The 'audience' parameter must be absent");
+            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), getDescription());
         }
     }
 }

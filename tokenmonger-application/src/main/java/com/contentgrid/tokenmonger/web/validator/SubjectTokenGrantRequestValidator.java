@@ -11,6 +11,11 @@ public class SubjectTokenGrantRequestValidator<C extends SubjectTokenInfo> imple
     private final TokenDecoder<Jwt> tokenDecoder;
 
     @Override
+    public String getDescription() {
+        return "A subject token is required";
+    }
+
+    @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
         context.setSubjectToken(tokenDecoder.decode(grantRequest.getSubjectToken()));
     }

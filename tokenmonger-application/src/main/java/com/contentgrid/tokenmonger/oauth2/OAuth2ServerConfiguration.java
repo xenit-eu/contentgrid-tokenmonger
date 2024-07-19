@@ -10,6 +10,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
+import java.net.URI;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,6 +37,12 @@ public class OAuth2ServerConfiguration {
     JWKSource<SecurityContext> jwkSource;
 
     InitializeOnce<JwtEncoder> jwtEncoder = new InitializeOnce<>(this::createJwtEncoder);
+
+    public URI getOAuthServerMetadataUri() {
+        var issuerUri = URI.create(issuer);
+
+        return issuerUri.resolve("/.well-known/oauth-authorization-server"+issuerUri.getPath());
+    }
 
     @SneakyThrows(KeySourceException.class)
     public JWKSet getJwkSet() {
