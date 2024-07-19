@@ -1,5 +1,6 @@
 package com.contentgrid.tokenmonger;
 
+import com.contentgrid.tokenmonger.validation.IssuerOrJwkSetUriNotEmpty;
 import com.nimbusds.jose.JWSAlgorithm;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -28,7 +29,7 @@ public class TokenmongerProperties {
     @Data
     public static class TokenEncoderProperties extends IssuerProperties {
         @NotEmpty
-        @URL
+        @URL(regexp = "^[^?#]+$")
         private String issuer;
         @NotEmpty
         private String activeSigningKeys;
@@ -38,8 +39,9 @@ public class TokenmongerProperties {
 
     @Data
     @EqualsAndHashCode(callSuper = true)
+    @IssuerOrJwkSetUriNotEmpty
     public static class TokenDecoderProperties extends IssuerProperties {
-        @URL
+        @URL(regexp = "^[^?#]+$")
         private String issuer;
 
         @URL
