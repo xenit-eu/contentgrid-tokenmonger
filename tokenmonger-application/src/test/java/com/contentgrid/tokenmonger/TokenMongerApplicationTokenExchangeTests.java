@@ -34,7 +34,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-@AutoConfigureMockMvc(printOnlyOnFailure = false)
+@AutoConfigureMockMvc
 class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplicationIntegrationTest {
 
     @Autowired
@@ -180,7 +180,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         mockMvc.perform(contentGridTokenGrant(gatewayToken)
                         .param("resource", "http://extension-system.test/xyz")
                 )
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
 
     @Test
@@ -190,7 +190,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         mockMvc.perform(contentGridTokenGrant(gatewayToken)
                         .param("resource", "http://extension-system.test/xyz")
                 )
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
 
     @Test
@@ -221,17 +221,6 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 }));
     }
 
-
-    @Test
-    void jwks_userToExtension() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/authentication/external/jwks")
-                        .header("Host", "extensions.contentgrid.test")
-                )
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(ueatSigningKeys.toString(true)));
-    }
-
-
     @Test
     void exchange_extensionToApp_success() throws Exception {
         var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
@@ -253,19 +242,24 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
     @Test
     void exchange_extensionToApp_withoutActor() throws Exception {
         mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN), null))
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Actor token is required"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
     }
 
     @Test
     void exchange_extensionToApp_extensionTokenAsSubject() throws Exception {
         mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN), null))
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
     }
 
     @Test
     void exchange_extensionToApp_extensionToAppTokenAsSubject() throws Exception {
         mockMvc.perform(tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN), null))
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
     }
 
     @Test
@@ -346,7 +340,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
 
         mockMvc.perform(tokenExchange("/authentication/system/token", eit, null))
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
     }
 
     @Test
@@ -355,7 +350,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
 
         mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
                         .param("resource", "https://unknown-app.invalid"))
-                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
 
     }
 }

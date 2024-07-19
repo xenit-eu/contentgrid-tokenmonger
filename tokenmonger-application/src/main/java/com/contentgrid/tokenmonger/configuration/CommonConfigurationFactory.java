@@ -56,6 +56,7 @@ public class CommonConfigurationFactory {
             JWKSource<SecurityContext> jwkSource
     ) {
         return new JwtTokenDecoder(
+                tokenEncoderProperties.getIssuer(),
                 JwtDecoderBuilder.create()
                         .issuer(tokenEncoderProperties.getIssuer())
                         .jwkSource(jwkSource)
@@ -78,6 +79,9 @@ public class CommonConfigurationFactory {
     public TokenDecoder<Jwt> tokenDecoder(
             TokenDecoderProperties tokenDecoderProperties
     ) {
-        return new JwtTokenDecoder(jwtDecoder(tokenDecoderProperties));
+        return new JwtTokenDecoder(
+                tokenDecoderProperties.getIssuer(),
+                jwtDecoder(tokenDecoderProperties)
+        );
     }
 }

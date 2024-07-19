@@ -24,6 +24,9 @@ public class ActorTokenGrantRequestValidator<C extends ActorTokenInfo> implement
 
     @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
+        if(grantRequest.getActorToken() == null) {
+            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "Actor token is required", "https://www.rfc-editor.org/rfc/rfc8693.html#section-2.1"));
+        }
         var actorToken = tokenDecoder.decode(grantRequest.getActorToken());
 
         var subjectAllowedActor = context.getSubjectToken().getClaimAsMap("may_act");
