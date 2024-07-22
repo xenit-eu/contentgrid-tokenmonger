@@ -415,6 +415,32 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         }
 
         @Test
+        void exchange_wrongActor_sub() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            var extensionIdentityToken = createEitJwt(jwt -> {
+                jwt.subject("other-extension");
+            });
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            extensionIdentityToken))
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Actor is not allowed to act on behalf of the subject"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
+        }
+
+        @Test
+        void exchange_wrongActor_iss() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            var extensionIdentityToken = createEitJwt(jwt -> {
+                jwt.issuer("http://other-issuer.example/zzzz");
+            });
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            extensionIdentityToken))
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
         void exchange_recursively_success() throws Exception {
             var extensionToAppToken = retrieveToken(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN);
 
