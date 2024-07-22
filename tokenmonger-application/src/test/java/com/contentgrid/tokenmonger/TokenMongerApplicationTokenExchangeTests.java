@@ -60,8 +60,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 .issuer("http://auth.contentgrid.test/realms/xyz")
                 .subject("test-user")
                 .audience(List.of("contentgrid:system:endpoints:authentication"))
-                .claim("context:application:id", "application-id")
-                .claim("context:application:domains", List.of("xyz.contentgrid.test"))
+                .claim("context:application:id", "test1")
+                .claim("context:application:domains", List.of("test1.app.contentgrid.example", "my-domain.app.contentgrid.example"))
                 .claim("restrict:principal_claims", "enc:ZZZZ");
 
         configurer.accept(jwtClaimsSetBuilder);
@@ -92,8 +92,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             assertThat(jwt.getIssuer()).isEqualTo(new URL("http://extensions.contentgrid.test/authentication/external"));
             assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
             assertThat(jwt.getAudience()).containsExactly("contentgrid:extension:test-extension");
-            assertThat(jwt.getClaimAsString("context:application:id")).isEqualTo("application-id");
-            assertThat(jwt.getClaimAsStringList("context:application:domains")).isEqualTo(List.of("xyz.contentgrid.test"));
+            assertThat(jwt.getClaimAsString("context:application:id")).isEqualTo("test1");
+            assertThat(jwt.getClaimAsStringList("context:application:domains")).isEqualTo(List.of("test1.app.contentgrid.example", "my-domain.app.contentgrid.example"));
             assertThat(jwt.getClaimAsString("restrict:principal_claims")).isEqualTo("enc:ZZZZ");
             assertThat(jwt.getExpiresAt()).isNotNull()
                     .isBeforeOrEqualTo(Instant.now().plus(5, ChronoUnit.MINUTES));
@@ -281,12 +281,69 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                                 .containsEntry("iss", "https://auth.contentgrid.test/realms/extensions")
                                 .containsEntry("sub", "test-extension");
 
+                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
                         assertThat(jwt.getClaimAsString("restrict:principal_claims")).isEqualTo("enc:ZZZZ");
                         assertThat(jwt.getExpiresAt()).isNotNull()
                                 .isCloseTo(userToExtensionToken.getExpiresAt(), within(1, ChronoUnit.SECONDS));
+                        assertThat(jwt.hasClaim("context:application:resource")).isFalse();
                     }));
         }
 
+        @Test
+        void exchange_resource_inApp_success() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("resource", "http://test1.app.contentgrid.example/xyz")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(accessToken(edaatSigningKeys, jwt -> {
+                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
+                        assertThat(jwt.getClaimAsStringList("context:application:resource")).containsExactly("/xyz");
+                    }));
+        }
+
+
+        @Test
+        void exchange_multipleResources_inApp_success() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("resource", "http://test1.app.contentgrid.example/xyz")
+                            .param("resource", "http://my-domain.app.contentgrid.example/fff?a=c")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(accessToken(edaatSigningKeys, jwt -> {
+                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
+                        assertThat(jwt.getClaimAsStringList("context:application:resource")).containsExactly("/xyz", "/fff?a=c");
+                    }));
+        }
+
+        @Test
+        void exchange_resource_otherApp_failure() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("resource", "http://test2.app.contentgrid.test/xyz")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (test1.app.contentgrid.example, my-domain.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
+        }
+
+        @Test
+        void exchange_resource_unknownApp_failure() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("resource", "http://not-an-app.test/xyz")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (test1.app.contentgrid.example, my-domain.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
+        }
         @Test
         void exchange_withoutActor() throws Exception {
             mockMvc.perform(tokenExchange("/authentication/delegated/token",
@@ -336,6 +393,28 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         }
 
         @Test
+        void exchange_scope() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("scope", "test")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
+        void exchange_audience() throws Exception {
+            var userToExtensionToken = retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
+                            retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN))
+                            .param("audience", "test")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
         void exchange_recursively_success() throws Exception {
             var extensionToAppToken = retrieveToken(IssuerType.EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN);
 
@@ -349,8 +428,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                 jwt.claim("act", extensionToAppToken.getClaim("act"));
 
                 jwt.audience(List.of("contentgrid:system:endpoints:authentication"))
-                        .claim("context:application:id", "application-id")
-                        .claim("context:application:domains", List.of("xyz.contentgrid.test"))
+                        .claim("context:application:id", "test1")
+                        .claim("context:application:domains", List.of("test1.app.contentgrid.example", "my-domain.app.contentgrid.example"))
                         .claim("restrict:principal_claims", "enc:YYYY");
             });
 
@@ -382,7 +461,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                         assertThat(jwt.getIssuer()).hasToString(
                                 "http://extensions.contentgrid.test/authentication/delegated");
                         assertThat(jwt.getSubject()).isEqualTo("http://auth.contentgrid.test/realms/xyz#test-user");
-                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:application-id");
+                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
                         assertThat(jwt.getClaimAsMap("act")).isEqualTo(Map.of(
                                 "iss", "https://auth.contentgrid.test/realms/extensions",
                                 "sub", "ml",
@@ -412,6 +491,25 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                                 "http://extensions.contentgrid.test/authentication/system");
                         assertThat(jwt.getSubject()).isEqualTo("test-extension");
                         assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
+                        assertThat(jwt.getClaimAsStringList("context:application:resource")).containsExactly("/xyz");
+                    }));
+        }
+
+        @Test
+        void exchange_multipleResource_singleApp_success() throws Exception {
+            var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+
+            mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                            .param("resource", "https://test1.app.contentgrid.example/xyz")
+                            .param("resource", "https://my-domain.app.contentgrid.example/fff?a=b")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(accessToken(eaatSigningKeys, jwt -> {
+                        assertThat(jwt.getIssuer()).hasToString(
+                                "http://extensions.contentgrid.test/authentication/system");
+                        assertThat(jwt.getSubject()).isEqualTo("test-extension");
+                        assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
+                        assertThat(jwt.getClaimAsStringList("context:application:resource")).containsExactly("/xyz", "/fff?a=b");
                     }));
         }
 
@@ -420,6 +518,26 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             var eit = createEitJwt(builder -> builder.audience(List.of("invalid_audience")));
             mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
                             .param("resource", "https://test1.app.contentgrid.example/xyz")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
+        void exchange_scope() throws Exception {
+            var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                            .param("scope", "test")
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
+        void exchange_audience() throws Exception {
+            var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+            mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                            .param("audience", "test")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
@@ -458,6 +576,18 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
 
             mockMvc.perform(tokenExchange("/authentication/system/token", eit, null))
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
+        void exchange_multipleResource_multipleApps() throws Exception {
+            var eit = retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN);
+
+            mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
+                            .param("resource", "https://test1.app.contentgrid.example/xyz")
+                            .param("resource", "https://test2.app.contentgrid.example/fff?a=b")
+                    )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
         }

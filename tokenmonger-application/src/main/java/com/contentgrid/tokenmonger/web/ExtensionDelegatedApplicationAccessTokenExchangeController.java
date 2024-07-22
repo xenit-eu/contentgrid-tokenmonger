@@ -71,9 +71,12 @@ public class ExtensionDelegatedApplicationAccessTokenExchangeController extends 
         var builder = JwtClaimsSet.builder()
                 .subject(context.getSubjectToken().getSubject())
                 .audience(List.of("contentgrid:application:"+context.getApplication().getApplicationId()))
-                .claim("context:application:resource", context.getApplicationResourcePaths())
                 .expiresAt(tokenExpiryPolicy.getExpiry(context.getSubjectToken().getExpiresAt()))
                 .claim("act", assembleActors(context.getActorToken(), context.getSubjectToken().getClaimAsMap("act")));
+
+        if(!context.getApplicationResourcePaths().isEmpty()) {
+            builder.claim("context:application:resource", context.getApplicationResourcePaths());
+        }
 
         context.getSubjectToken().getClaims().forEach((claimName, claimValue) -> {
             if(claimName.startsWith("restrict:")) {

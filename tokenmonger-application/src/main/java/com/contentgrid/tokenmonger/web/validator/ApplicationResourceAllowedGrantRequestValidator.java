@@ -35,7 +35,7 @@ public class ApplicationResourceAllowedGrantRequestValidator<C extends Applicati
         if(!allowedHosts.contains(uri.getHost())) {
             throw new OAuth2ErrorException(new OAuth2Error(
                     "invalid_target",
-                    "Requested resource is not an allowed host (%s)".formatted(String.join(",", allowedHosts)),
+                    "Requested resource is not an allowed host (%s)".formatted(String.join(", ", allowedHosts)),
                     "https://www.rfc-editor.org/rfc/rfc8707.html#section-2"
             ));
         }
