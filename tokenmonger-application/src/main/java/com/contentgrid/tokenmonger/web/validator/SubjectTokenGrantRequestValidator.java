@@ -1,8 +1,8 @@
 package com.contentgrid.tokenmonger.web.validator;
 
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
-import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator.SubjectTokenInfo;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
+import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator.SubjectTokenInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 

@@ -6,8 +6,6 @@ import com.contentgrid.tokenmonger.configuration.CommonConfigurationFactory;
 import com.contentgrid.tokenmonger.extensions.registration.InMemoryRegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.jwk.source.JWKSourceWrapperBuilder;
-import com.contentgrid.tokenmonger.oauth2.jwt.JwtDecoderBuilder;
-import com.contentgrid.tokenmonger.oauth2.token.decoder.JwtTokenDecoder;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
 import com.contentgrid.tokenmonger.web.mapping.TokenmongerRequestMappingHandlerMapping;
 import com.nimbusds.jose.jwk.JWKMatcher;
@@ -18,7 +16,6 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.proc.SimpleSecurityContext;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.beans.factory.InitializingBean;
@@ -34,7 +31,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @SpringBootApplication

@@ -2,7 +2,6 @@ package com.contentgrid.tokenmonger.extensions.registration;
 
 import java.util.Set;
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 @Builder

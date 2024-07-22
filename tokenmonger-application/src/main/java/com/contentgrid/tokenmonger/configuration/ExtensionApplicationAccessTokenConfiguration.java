@@ -1,6 +1,5 @@
 package com.contentgrid.tokenmonger.configuration;
 
-import com.contentgrid.tokenmonger.ExtensionRegistrationProperties;
 import com.contentgrid.tokenmonger.IssuerContext;
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
 import com.contentgrid.tokenmonger.TokenmongerProperties;
@@ -11,12 +10,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 
 @Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor

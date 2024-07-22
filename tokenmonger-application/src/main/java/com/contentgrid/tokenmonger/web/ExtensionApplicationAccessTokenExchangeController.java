@@ -8,6 +8,7 @@ import com.contentgrid.tokenmonger.application.ApplicationRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
+import com.contentgrid.tokenmonger.web.ExtensionApplicationAccessTokenExchangeController.Context;
 import com.contentgrid.tokenmonger.web.validator.ApplicationResourceAllowedGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.ApplicationResourceAllowedGrantRequestValidator.ApplicationResourceInformation;
 import com.contentgrid.tokenmonger.web.validator.NoActorTokenExchangeGrantRequestValidator;
@@ -17,12 +18,10 @@ import com.contentgrid.tokenmonger.web.validator.SingleApplicationResourceGrantR
 import com.contentgrid.tokenmonger.web.validator.SingleApplicationResourceGrantRequestValidator.ApplicationInformation;
 import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator;
 import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator.SubjectTokenInfo;
-import com.contentgrid.tokenmonger.web.ExtensionApplicationAccessTokenExchangeController.Context;
 import java.util.List;
 import lombok.Data;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
