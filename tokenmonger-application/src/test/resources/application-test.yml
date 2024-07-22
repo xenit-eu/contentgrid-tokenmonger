@@ -57,6 +57,7 @@ contentgrid:
             - http://ml-system.test/
     extension-identity:
       issuer: https://auth.contentgrid.test/realms/extensions
+      audience: tokenmonger
 
     extension-application-access:
       issuer: http://extensions.contentgrid.test/authentication/system

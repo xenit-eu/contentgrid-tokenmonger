@@ -8,7 +8,6 @@ import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantReq
 import java.net.URI;
 import java.util.HashSet;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
@@ -38,11 +37,6 @@ public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInf
             default -> throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "'resource' URIs can not map to different extensions");
         };
         context.setExtension(targetApp);
-    }
-
-    @SneakyThrows
-    private String extractPath(URI uri) {
-        return new URI(null, null, uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
     }
 
     public interface ExtensionInformation {
