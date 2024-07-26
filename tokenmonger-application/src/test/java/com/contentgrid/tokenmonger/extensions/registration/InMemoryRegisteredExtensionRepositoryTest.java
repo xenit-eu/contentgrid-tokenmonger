@@ -10,12 +10,10 @@ class InMemoryRegisteredExtensionRepositoryTest {
     void registeredWithResourceUri() {
         var ext1 = RegisteredExtension.builder()
                         .extensionId("test-1")
-                        .clientIds(Set.of())
                         .resourceUris(Set.of("http://example.com", "http://example.net/", "http://path.example/path1"))
                         .build();
         var ext2 = RegisteredExtension.builder()
                 .extensionId("test-2")
-                .clientIds(Set.of())
                 .resourceUris(Set.of("http://path.example/path2"))
                 .build();
         var repo = new InMemoryRegisteredExtensionRepository(ext1, ext2);

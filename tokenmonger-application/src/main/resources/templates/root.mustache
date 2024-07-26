@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tokenmonger</title>
+</head>
+<body>
+<p>Issuers available on this server</p>
+<ul>
+    {{#servers}}
+        <li><a href="{{ issuer }}"><code>{{ issuer }}</code></a></li>
+    {{/servers}}
+</ul>
+</body>
+</html>

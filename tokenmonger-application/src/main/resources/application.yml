@@ -4,9 +4,12 @@ spring:
 management:
   endpoints:
     web:
-      exposure.include: health,info,prometheus,metrics
+      exposure.include: '*'
   server:
     port: 8081
 
 
+contentgrid.tokenmonger:
+  user-application-access:
+    audience: contentgrid:system:endpoints:authentication
 

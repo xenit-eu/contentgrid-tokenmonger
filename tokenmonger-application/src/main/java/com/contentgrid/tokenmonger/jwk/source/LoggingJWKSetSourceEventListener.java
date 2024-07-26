@@ -1,12 +1,8 @@
 package com.contentgrid.tokenmonger.jwk.source;
 
 import com.nimbusds.jose.jwk.source.CachingJWKSetSource;
-import com.nimbusds.jose.jwk.source.CachingJWKSetSource.RefreshCompletedEvent;
-import com.nimbusds.jose.jwk.source.CachingJWKSetSource.RefreshInitiatedEvent;
-import com.nimbusds.jose.jwk.source.CachingJWKSetSource.UnableToRefreshEvent;
 import com.nimbusds.jose.jwk.source.JWKSetSource;
 import com.nimbusds.jose.jwk.source.OutageTolerantJWKSetSource;
-import com.nimbusds.jose.jwk.source.OutageTolerantJWKSetSource.OutageEvent;
 import com.nimbusds.jose.jwk.source.RefreshAheadCachingJWKSetSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.util.events.Event;

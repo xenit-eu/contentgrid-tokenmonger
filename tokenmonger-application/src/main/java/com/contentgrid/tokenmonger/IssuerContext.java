@@ -17,9 +17,11 @@ public @interface IssuerContext {
     IssuerType value();
 
     enum IssuerType {
-        USER_TO_EXTENSION,
-        EXTENSION_TO_APP,
-        EXTENSION_SYSTEM
+        USER_APPLICATION_ACCESS_TOKEN,
+        EXTENSION_IDENTITY_TOKEN,
+        USER_EXTENSION_ACCESS_TOKEN,
+        EXTENSION_APPLICATION_ACCESS_TOKEN,
+        EXTENSION_DELEGATED_APPLICATION_ACCESS_TOKEN,
     }
 
 }

@@ -6,39 +6,41 @@ management:
   server:
     port: 9189
 
-spring:
-  security:
-    oauth2:
-      authorizationserver:
-        client:
-          test:
-            registration:
-              client-id: "test-client"
-              client-secret: "{noop}test-client-secret"
-              client-authentication-methods:
-                - "client_secret_basic"
-                - "client_secret_post"
-              authorization-grant-types:
-                - "authorization_code"
-                - "client_credentials"
-                - "https://contentgrid.cloud/oauth2/grant/extension-token"
-                - "urn:ietf:params:oauth:grant-type:token-exchange"
-              redirect-uris:
-                - "http://localhost/oauth2"
-
 contentgrid:
   tokenmonger:
-    user-to-extension:
+    applications:
+      registration:
+        test1:
+          application-id: test1
+          domains:
+            - test1.example
+            - test1.invalid
+        test2:
+          application-id: test2
+          domains:
+            - test2.example
+
+    extension-identity:
+      issuer: http://localhost:8082/realms/extensions
+
+    user-application-access:
       jwk-set-uri: http://localhost:9081/actuator/jwks/authentication
-      issuer: http://localhost:9089/extensions
+
+    extension-application-access:
+      issuer: http://localhost:9089/authentication/system
       active-signing-keys: file:signing-keys/active.pem
-      retired-signing-keys: file:signing-keys/*.pem
-    extension:
+
+    user-extension-access:
+      issuer: http://localhost:9089/authentication/external
+      active-signing-keys: file:signing-keys/active.pem
       registration:
         test:
           extension-id: test
-          client-ids:
-            - test-client
           resource-uris:
             - http://example.com/
             - http://example.org/
+
+    extension-delegated-application-access:
+      issuer: http://localhost:9089/authentication/delegated
+      active-signing-keys: file:signing-keys/active.pem
+
