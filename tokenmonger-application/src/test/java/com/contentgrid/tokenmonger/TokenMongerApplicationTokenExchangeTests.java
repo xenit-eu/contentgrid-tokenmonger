@@ -328,7 +328,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (test1.app.contentgrid.example, my-domain.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (my-domain.app.contentgrid.example, test1.app.contentgrid.example)"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
 
@@ -341,7 +341,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (test1.app.contentgrid.example, my-domain.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (my-domain.app.contentgrid.example, test1.app.contentgrid.example)"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
         @Test

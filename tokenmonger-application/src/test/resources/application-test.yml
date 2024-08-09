@@ -32,19 +32,17 @@ spring:
               redirect-uris:
                 - "http://ml-system.test/oauth2"
 
+contentgrid.configuration.static.contentgrid-apps:
+  test1:
+    composition-key: test1
+    configuration:
+      contentgrid.routing.domains: test1.app.contentgrid.example,my-domain.app.contentgrid.example
+  test2:
+    composition-key: test2
+    configuration:
+      contentgrid.routing.domains: test2.app.contentgrid.example
 contentgrid:
   tokenmonger:
-    applications:
-      registration:
-        test1:
-          application-id: test1
-          domains:
-            - test1.app.contentgrid.example
-            - my-domain.app.contentgrid.example
-        test2:
-          application-id: test2
-          domains:
-            - test2.app.contentgrid.example
     extensions:
       registration:
         test:

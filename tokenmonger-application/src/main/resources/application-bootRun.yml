@@ -6,20 +6,18 @@ management:
   server:
     port: 9189
 
+contentgrid.configuration.static.contentgrid-apps:
+  test1:
+    composition-key: test1
+    configuration:
+      contentgrid.routing.domains: test1.example,test1.invalid
+  test2:
+    composition-key: test2
+    configuration:
+      contentgrid.routing.domains: test2.example
+
 contentgrid:
   tokenmonger:
-    applications:
-      registration:
-        test1:
-          application-id: test1
-          domains:
-            - test1.example
-            - test1.invalid
-        test2:
-          application-id: test2
-          domains:
-            - test2.example
-
     extension-identity:
       issuer: http://localhost:8082/realms/extensions
 

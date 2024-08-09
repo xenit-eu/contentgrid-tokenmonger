@@ -8,4 +8,5 @@ javaPlatform {
 
 dependencies {
     api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+    api platform("com.contentgrid.configuration:contentgrid-configuration-bom:0.1.1")
 }

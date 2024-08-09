@@ -1,7 +1,12 @@
 package com.contentgrid.tokenmonger;
 
+import com.contentgrid.configuration.api.ComposedConfiguration;
+import com.contentgrid.configuration.api.observable.Observable;
+import com.contentgrid.configuration.applications.ApplicationConfiguration;
+import com.contentgrid.configuration.applications.ApplicationId;
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
-import com.contentgrid.tokenmonger.application.InMemoryApplicationRepository;
+import com.contentgrid.tokenmonger.apps.ContentgridAppRepository;
+import com.contentgrid.tokenmonger.apps.ContentgridAppRepositoryImpl;
 import com.contentgrid.tokenmonger.configuration.CommonConfigurationFactory;
 import com.contentgrid.tokenmonger.extensions.registration.InMemoryRegisteredExtensionRepository;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
@@ -34,7 +39,7 @@ import org.springframework.security.web.authentication.Http403ForbiddenEntryPoin
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 @SpringBootApplication
-@EnableConfigurationProperties({ApplicationRegistrationProperties.class, ExtensionRegistrationProperties.class, TokenmongerProperties.class})
+@EnableConfigurationProperties({ExtensionRegistrationProperties.class, TokenmongerProperties.class})
 public class TokenmongerApplication {
 
 	public static void main(String[] args) {
@@ -49,10 +54,12 @@ public class TokenmongerApplication {
 	}
 
 	@Bean
-	InMemoryApplicationRepository inMemoryApplicationRepository(
-			ApplicationRegistrationProperties applicationRegistrationProperties
+	ContentgridAppRepository applicationRepository(
+			Observable<ComposedConfiguration<ApplicationId, ApplicationConfiguration>> applicationConfigurationObservable
 	) {
-		return new InMemoryApplicationRepository(applicationRegistrationProperties.getRegistration().values());
+		var repo = new ContentgridAppRepositoryImpl();
+		repo.subscribe(applicationConfigurationObservable);
+		return repo;
 	}
 
 	@Bean

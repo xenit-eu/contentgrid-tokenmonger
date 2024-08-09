@@ -92,17 +92,22 @@ Signing keys are regularly (but not immediately) reloaded from filesystem.
 For every JWT issuer least `issuer` and `active-signing-keys` properties must be configured.
 URLs for the token-endpoint and JWK Set are automatically exposed underneath on the configured `issuer` URL; [RFC8418] Authorization Server metadata is also available
 
-### Application and Extension registration
+### Extension registration
 
-For some token requests, Tokenmonger needs to resolve a `resource` parameter to an extension or an application.
+For some token requests, Tokenmonger needs to resolve a `resource` parameter to an extension.
 
-The configuration needed for this can be configured in the application and extension registration configuration.
+The configuration needed for this can be configured in the extension registration configuration.
 
 | Property                                                             | Type           | Description                                                                                                 |
 |----------------------------------------------------------------------|----------------|-------------------------------------------------------------------------------------------------------------|
 | `contentgrid.tokenmonger.extensions.registration.*.extension-id`     | string         | Unique identifier of the extension. This value is used as `sub` in Extension Identity Tokens.               |
 | `contentgrid.tokenmonger.extensions.registration.*.resource-uris`    | list of URI    | List of resource URIs used by the extension.                                                                |
-| `contentgrid.tokenmonger.applications.registration.*.application-id` | string         | Unique identifier of the application. This value is used as `aud` in the Extension Application Access Token |
-| `contentgrid.tokenmonger.applications.registration.*.domains`        | list of string | Domains registered to the application.                                                                      |
+
+### Application discovery
+
+For some token requests, Tokenmonger needs to resolve a `resource` parameter to an application.
+
+The discovery of which resources belong to which applications is done using [ContentGrid configuration discovery](https://github.com/xenit-eu/contentgrid-configuration-discovery/),
+which can read configuration from Kubernetes or from local properties.
 
 [RFC8414]: https://www.rfc-editor.org/rfc/rfc8414.html
