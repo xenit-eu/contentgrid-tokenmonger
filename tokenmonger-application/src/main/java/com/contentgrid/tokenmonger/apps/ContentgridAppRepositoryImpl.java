@@ -25,11 +25,11 @@ public class ContentgridAppRepositoryImpl implements ContentgridAppRepository, O
             case 0 -> Optional.empty();
             case 1 -> createApp(configurations.iterator().next());
             default -> {
-                log.warn("Multiple applications are registered for domain '{}'. Refusing to pick an application.", domain);
+                log.warn("Domain '{}' resolves to multiple applications; refusing to pick any.", domain);
                 yield  Optional.empty();
             }
         };
-    }
+        }
 
     private Optional<ContentgridApp> createApp(ComposedConfiguration<ApplicationId, ApplicationConfiguration> configuration) {
         return Optional.of(new ContentgridApp(
