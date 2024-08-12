@@ -1,7 +1,7 @@
 package com.contentgrid.tokenmonger.web.validator;
 
-import com.contentgrid.tokenmonger.application.Application;
-import com.contentgrid.tokenmonger.application.ApplicationRepository;
+import com.contentgrid.tokenmonger.apps.ContentgridApp;
+import com.contentgrid.tokenmonger.apps.ContentgridAppRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest.HasResource;
 import com.contentgrid.tokenmonger.web.validator.SingleApplicationResourceGrantRequestValidator.ApplicationInformation;
@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 @RequiredArgsConstructor
 public class SingleApplicationResourceGrantRequestValidator<C extends ApplicationInformation> implements GrantRequestValidator<HasResource, C> {
 
-    private final ApplicationRepository applicationRepository;
+    private final ContentgridAppRepository applicationRepository;
 
     @Override
     public String getDescription() {
@@ -23,7 +23,7 @@ public class SingleApplicationResourceGrantRequestValidator<C extends Applicatio
 
     @Override
     public void validate(HasResource grantRequest, C context) {
-        var targetApps = new HashSet<Application>();
+        var targetApps = new HashSet<ContentgridApp>();
 
         for (URI resourceUri : grantRequest.getResource()) {
             var application = applicationRepository.findByUri(resourceUri)
@@ -40,7 +40,7 @@ public class SingleApplicationResourceGrantRequestValidator<C extends Applicatio
     }
 
     public interface ApplicationInformation {
-        void setApplication(Application application);
-        Application getApplication();
+        void setApplication(ContentgridApp application);
+        ContentgridApp getApplication();
     }
 }

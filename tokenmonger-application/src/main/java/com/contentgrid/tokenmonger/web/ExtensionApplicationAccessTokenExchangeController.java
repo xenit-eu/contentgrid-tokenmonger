@@ -3,8 +3,8 @@ package com.contentgrid.tokenmonger.web;
 import com.contentgrid.tokenmonger.IssuerContext;
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
 import com.contentgrid.tokenmonger.TokenExpiryPolicy;
-import com.contentgrid.tokenmonger.application.Application;
-import com.contentgrid.tokenmonger.application.ApplicationRepository;
+import com.contentgrid.tokenmonger.apps.ContentgridApp;
+import com.contentgrid.tokenmonger.apps.ContentgridAppRepository;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
@@ -35,7 +35,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
             OAuth2ServerConfiguration eaatServerConfiguration,
             @IssuerContext(IssuerType.EXTENSION_IDENTITY_TOKEN)
             TokenDecoder<Jwt> eitDecoder,
-            ApplicationRepository applicationRepository,
+            ContentgridAppRepository applicationRepository,
             TokenExpiryPolicy tokenExpiryPolicy
     ) {
         super(
@@ -73,7 +73,7 @@ public class ExtensionApplicationAccessTokenExchangeController extends AbstractT
 
     @Data
     protected static class Context implements ApplicationInformation, ApplicationResourceInformation, SubjectTokenInfo {
-        private Application application;
+        private ContentgridApp application;
         private List<String> applicationResourcePaths;
         private Jwt subjectToken;
     }
