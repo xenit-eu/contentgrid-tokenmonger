@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Retention(RetentionPolicy.RUNTIME)
 @RequestMapping(
         method = RequestMethod.GET,
-        path = {
-                ".well-known/oauth-authorization-server",
-                ".well-known/openid-configuration"
-        },
+        path = ".well-known/oauth-authorization-server",
         produces =  MediaType.APPLICATION_JSON_VALUE
 )
 @IssuerContextCombinationMapping(Operation.APPEND)

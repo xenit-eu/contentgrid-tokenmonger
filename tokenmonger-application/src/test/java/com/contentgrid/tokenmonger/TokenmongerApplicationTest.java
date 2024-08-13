@@ -48,12 +48,6 @@ class TokenmongerApplicationTest extends AbstractTokenmongerApplicationIntegrati
     @ParameterizedTest
     @MethodSource("issuerUrls")
     void read_metadata_information_endpoint(String issuer) throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/%s/.well-known/openid-configuration".formatted(issuer))
-                .header("Host", "extensions.contentgrid.test")
-        ).andExpect(MockMvcResultMatchers.status().is3xxRedirection())
-                .andExpect(MockMvcResultMatchers.redirectedUrlTemplate("http://extensions.contentgrid.test/.well-known/oauth-authorization-server/{issuer}", issuer));
-
-
         mockMvc.perform(MockMvcRequestBuilders.get("/.well-known/oauth-authorization-server/{issuer}", issuer)
                         .header("Host", "extensions.contentgrid.test")
                 )
