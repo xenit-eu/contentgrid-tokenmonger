@@ -22,4 +22,9 @@ public class OAuth2ServerMetadata {
 
     @JsonProperty("grant_types_supported")
     List<GrantType> grantTypesSupported;
+
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    @Builder.Default
+    List<String> tokenEndpointAuthMethodsSupported = List.of("none");
+
 }

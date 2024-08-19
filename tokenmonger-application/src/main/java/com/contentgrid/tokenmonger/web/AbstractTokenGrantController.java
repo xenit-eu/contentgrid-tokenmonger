@@ -71,17 +71,6 @@ abstract class AbstractTokenGrantController<T extends GrantRequest, C> {
     }
 
 
-    @GetMapping(
-            path = ".well-known/openid-configuration",
-            produces =  MediaType.APPLICATION_JSON_VALUE
-    )
-    @IssuerContextCombinationMapping(Operation.PREPEND)
-    public final ResponseEntity<Void> alternateOAuth2ServerMetadata() {
-        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-                .location(oAuth2ServerConfiguration.getOAuthServerMetadataUri())
-                .build();
-    }
-
     @JwkSetEndpointMapping
     public JWKSet jwkSet() {
         return oAuth2ServerConfiguration.getJwkSet().toPublicJWKSet();
