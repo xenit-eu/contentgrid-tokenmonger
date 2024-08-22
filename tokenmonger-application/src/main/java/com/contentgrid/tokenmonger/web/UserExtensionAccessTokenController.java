@@ -6,8 +6,8 @@ import com.contentgrid.tokenmonger.TokenExpiryPolicy;
 import com.contentgrid.tokenmonger.TokenmongerProperties;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtension;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.OAuth2ServerConfiguration;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.ContentgridExtensionTokenGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantResponse;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
@@ -24,7 +24,6 @@ import java.util.Objects;
 import lombok.Data;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimNames;
@@ -92,7 +91,9 @@ public class UserExtensionAccessTokenController extends AbstractTokenGrantContro
     protected JwtClaimsSet createToken(Context context) {
         var principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if(!(principal instanceof Jwt)) {
-            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED, "Bearer authentication is required", "about:blank"));
+            throw OAuth2ErrorBuilder.create(OAuth2ErrorCodes.ACCESS_DENIED)
+                    .description("bearer authentication is required")
+                    .buildException();
         }
 
         var userToken = (Jwt)principal;

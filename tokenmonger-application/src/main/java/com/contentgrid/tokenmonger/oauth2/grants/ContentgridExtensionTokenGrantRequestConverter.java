@@ -1,9 +1,8 @@
 package com.contentgrid.tokenmonger.oauth2.grants;
 
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import java.util.List;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
@@ -14,7 +13,7 @@ public class ContentgridExtensionTokenGrantRequestConverter implements Converter
     @Override
     public ContentgridExtensionTokenGrantRequest convert(MultiValueMap<String, String> source) {
         var wrapper = new GrantUtilities.MultiValueMapWrapper(source);
-        var grantType = GrantType.of(wrapper.requireSingleValue(OAuth2ParameterNames.GRANT_TYPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT)));
+        var grantType = GrantType.of(wrapper.requireSingleValue(OAuth2ParameterNames.GRANT_TYPE, OAuth2ErrorBuilder.invalidGrant()));
 
         if (!GrantType.CONTENTGRID_EXTENSION.equals(grantType)) {
             return null;
@@ -28,7 +27,7 @@ public class ContentgridExtensionTokenGrantRequestConverter implements Converter
         return ContentgridExtensionTokenGrantRequest.builder()
                 .grantType(grantType)
                 .resource(resource)
-                .scope(wrapper.maybeSingleValue(OAuth2ParameterNames.SCOPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_SCOPE))
+                .scope(wrapper.maybeSingleValue(OAuth2ParameterNames.SCOPE, OAuth2ErrorBuilder.invalidScope())
                         .map(GrantUtilities::convertScope)
                         .orElseGet(List::of)
                 )
