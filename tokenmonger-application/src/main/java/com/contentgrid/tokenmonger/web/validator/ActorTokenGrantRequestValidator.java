@@ -1,6 +1,6 @@
 package com.contentgrid.tokenmonger.web.validator;
 
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
 import com.contentgrid.tokenmonger.web.validator.ActorTokenGrantRequestValidator.ActorTokenInfo;
@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 @RequiredArgsConstructor
@@ -25,14 +23,22 @@ public class ActorTokenGrantRequestValidator<C extends ActorTokenInfo> implement
     @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
         if(grantRequest.getActorToken() == null) {
-            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "Actor token is required", "https://www.rfc-editor.org/rfc/rfc8693.html#section-2.1"));
+            throw OAuth2ErrorBuilder.invalidRequest()
+                    .parameter("actor_token")
+                    .isRequired()
+                    .uri("https://www.rfc-editor.org/rfc/rfc8693.html#section-2.1")
+                    .buildException();
         }
-        var actorToken = tokenDecoder.decode(grantRequest.getActorToken());
+        var actorToken = tokenDecoder.decode(grantRequest.getActorToken(), OAuth2ErrorBuilder.invalidRequest().parameter("actor_token"));
 
         var subjectAllowedActor = context.getSubjectToken().getClaimAsMap("may_act");
 
         if(!isActorAllowed(actorToken, subjectAllowedActor)) {
-            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST, "Actor is not allowed to act on behalf of the subject", "https://www.rfc-editor.org/rfc/rfc8693.html#section-4.4"));
+            throw OAuth2ErrorBuilder.invalidRequest()
+                    .parameter("actor_token")
+                    .description("is not allowed to act on behalf of the subject")
+                    .uri("https://www.rfc-editor.org/rfc/rfc8693.html#section-4.4")
+                    .buildException();
         }
 
         context.setActorToken(actorToken);

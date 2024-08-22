@@ -328,7 +328,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (my-domain.app.contentgrid.example, test1.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' is not an allowed host"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
 
@@ -341,7 +341,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_target"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Requested resource is not an allowed host (my-domain.app.contentgrid.example, test1.app.contentgrid.example)"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' is not an allowed host"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
         @Test
@@ -350,7 +350,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN), null))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Actor token is required"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'actor_token' is required"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
 
@@ -359,7 +359,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             mockMvc.perform(tokenExchange("/authentication/delegated/token", null,
                     retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'subject_token' is required"));
         }
 
         public static Stream<IssuerType> exchange_invalidSubjectToken() {
@@ -374,7 +375,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             tokenExchange("/authentication/delegated/token", retrieveToken(issuerType),
                                     retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'subject_token' must be issued by 'http://extensions.contentgrid.test/authentication/external'"));
         }
 
         public static Stream<IssuerType> exchange_invalidActorToken() {
@@ -389,7 +391,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             tokenExchange("/authentication/delegated/token", retrieveToken(IssuerType.USER_EXTENSION_ACCESS_TOKEN),
                                     retrieveToken(issuerType)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'actor_token' must be issued by 'https://auth.contentgrid.test/realms/extensions'"));
         }
 
         @Test
@@ -400,7 +403,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("scope", "test")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'scope' must be absent"));
         }
 
         @Test
@@ -411,7 +415,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("audience", "test")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'audience' must be absent"));
         }
 
         @Test
@@ -424,7 +429,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             extensionIdentityToken))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Actor is not allowed to act on behalf of the subject"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'actor_token' is not allowed to act on behalf of the subject"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
 
@@ -437,7 +442,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             mockMvc.perform(tokenExchange("/authentication/delegated/token", userToExtensionToken,
                             extensionIdentityToken))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'actor_token' must be issued by 'https://auth.contentgrid.test/realms/extensions'"));
         }
 
         @Test
@@ -546,7 +552,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("resource", "https://test1.app.contentgrid.example/xyz")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'subject_token' can not be decoded"));
         }
 
         @Test
@@ -556,7 +563,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("scope", "test")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'scope' must be absent"));
         }
 
         @Test
@@ -566,7 +574,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("audience", "test")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'audience' must be absent"));
         }
 
         public static Stream<IssuerType> exchange_invalidSubjectToken() {
@@ -577,9 +586,12 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
         @ParameterizedTest
         @MethodSource
         void exchange_invalidSubjectToken(IssuerType issuerType) throws Exception {
-            mockMvc.perform(tokenExchange("/authentication/system/token", retrieveToken(issuerType), null))
+            mockMvc.perform(tokenExchange("/authentication/system/token", retrieveToken(issuerType), null)
+                            .param("resource", "https://test1.app.contentgrid.example/xyz")
+                    )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'subject_token' must be issued by 'https://auth.contentgrid.test/realms/extensions'"));
         }
 
         public static Stream<IssuerType> exchange_invalidActorToken() {
@@ -593,7 +605,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             tokenExchange("/authentication/system/token", retrieveToken(IssuerType.EXTENSION_IDENTITY_TOKEN),
                                     retrieveToken(issuerType)))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'actor_token' must be absent"));
         }
 
 
@@ -603,7 +616,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
 
             mockMvc.perform(tokenExchange("/authentication/system/token", eit, null))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' is required"));
         }
 
         @Test
@@ -615,7 +629,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                             .param("resource", "https://test2.app.contentgrid.example/fff?a=b")
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' must all be registered to the same application"));
         }
 
         @Test
@@ -625,8 +640,8 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
             mockMvc.perform(tokenExchange("/authentication/system/token", eit, null)
                             .param("resource", "https://unknown-app.invalid"))
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
-
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' value 'https://unknown-app.invalid' is not registered for any application"));
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.contentgrid.tokenmonger.oauth2.grants;
 
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -8,7 +8,6 @@ import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.UtilityClass;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
@@ -16,22 +15,19 @@ import org.springframework.util.StringUtils;
 public class GrantUtilities {
 
     static URI convertResourceUri(String resource) {
+        var errorBuilder = OAuth2ErrorBuilder.invalidTarget().parameter("resource");
         try {
             var uri = new URI(resource);
             if(!uri.isAbsolute()) {
-                throw new OAuth2ErrorException(createInvalidResourceError("The 'resource' parameter must be an absolute URI"));
+                throw errorBuilder.description("must be an absolute URI").buildException();
             }
             if(uri.getRawFragment() != null) {
-                throw new OAuth2ErrorException(createInvalidResourceError("The 'resource' parameter must not contain a fragment component"));
+                throw errorBuilder.description("must not contain a fragment component").buildException();
             }
             return uri;
         } catch (URISyntaxException e) {
-            throw new OAuth2ErrorException(createInvalidResourceError("The 'resource' parameter must be a valid URI"));
+            throw errorBuilder.description("must be a valid URI").buildException();
         }
-    }
-
-    private static OAuth2Error createInvalidResourceError(String description) {
-        return new OAuth2Error("invalid_target", description, "https://www.rfc-editor.org/rfc/rfc8693.html#name-request");
     }
 
     static List<String> convertScope(String scope) {
@@ -43,24 +39,24 @@ public class GrantUtilities {
         private final MultiValueMap<String, String> values;
 
         @NonNull
-        public String requireSingleValue(@NonNull String key, @NonNull OAuth2Error error) {
+        public String requireSingleValue(@NonNull String key, @NonNull OAuth2ErrorBuilder error) {
             var value = values.get(key);
             if(value == null || value.isEmpty()) {
-                throw new OAuth2ErrorException(error, "Parameter '%s' is missing".formatted(key));
+                throw error.parameter(key).isRequired().buildException();
             } else if(value.size() > 1) {
-                throw new OAuth2ErrorException(error, "Parameter '%s' may only be supplied once".formatted(key));
+                throw error.parameter(key).isSingleValueOnly().buildException();
             }
             return value.get(0);
         }
 
-        public Optional<String> maybeSingleValue(@NonNull String key, @NonNull OAuth2Error error) {
+        public Optional<String> maybeSingleValue(@NonNull String key, @NonNull OAuth2ErrorBuilder error) {
             var value = values.get(key);
 
             if(value == null || value.isEmpty()) {
                 return Optional.empty();
             }
             if(value.size() > 1) {
-                throw new OAuth2ErrorException(error, "Parameter '%s' may only be supplied once".formatted(key));
+                throw error.parameter(key).isSingleValueOnly().buildException();
             }
 
             return Optional.of(value.get(0));

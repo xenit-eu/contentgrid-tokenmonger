@@ -1,6 +1,6 @@
 package com.contentgrid.tokenmonger.oauth2.web;
 
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorException;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest;
 import java.io.IOException;
 import java.util.List;

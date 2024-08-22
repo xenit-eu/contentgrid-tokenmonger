@@ -1,5 +1,6 @@
 package com.contentgrid.tokenmonger.web.validator;
 
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
 import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator.SubjectTokenInfo;
@@ -17,7 +18,7 @@ public class SubjectTokenGrantRequestValidator<C extends SubjectTokenInfo> imple
 
     @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
-        context.setSubjectToken(tokenDecoder.decode(grantRequest.getSubjectToken()));
+        context.setSubjectToken(tokenDecoder.decode(grantRequest.getSubjectToken(), OAuth2ErrorBuilder.invalidRequest().parameter("subject_token")));
     }
 
     public interface SubjectTokenInfo {

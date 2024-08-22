@@ -1,4 +1,4 @@
-package com.contentgrid.tokenmonger.oauth2;
+package com.contentgrid.tokenmonger.oauth2.error;
 
 import lombok.Getter;
 import lombok.NonNull;

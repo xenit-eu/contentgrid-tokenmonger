@@ -1,5 +1,6 @@
 package com.contentgrid.tokenmonger.oauth2.grants;
 
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantUtilities.MultiValueMapWrapper;
 import com.contentgrid.tokenmonger.oauth2.token.Token;
 import com.contentgrid.tokenmonger.oauth2.token.TokenTypeIdentifier;
@@ -17,7 +18,7 @@ public class TokenExchangeGrantRequestConverter implements Converter<MultiValueM
     @Override
     public TokenExchangeGrantRequest convert(MultiValueMap<String, String> source) {
         var wrapper = new MultiValueMapWrapper(source);
-        var grantType = GrantType.of(wrapper.requireSingleValue(OAuth2ParameterNames.GRANT_TYPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT)));
+        var grantType = GrantType.of(wrapper.requireSingleValue(OAuth2ParameterNames.GRANT_TYPE, OAuth2ErrorBuilder.invalidGrant()));
 
         if (!GrantType.TOKEN_EXCHANGE.equals(grantType)) {
             return null;
@@ -29,13 +30,13 @@ public class TokenExchangeGrantRequestConverter implements Converter<MultiValueM
                 .toList();
 
         var subjectToken = new Token(
-                wrapper.requireSingleValue(OAuth2ParameterNames.SUBJECT_TOKEN, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST)),
-                TokenTypeIdentifier.of(wrapper.requireSingleValue(OAuth2ParameterNames.SUBJECT_TOKEN_TYPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST)))
+                wrapper.requireSingleValue(OAuth2ParameterNames.SUBJECT_TOKEN, OAuth2ErrorBuilder.invalidRequest()),
+                TokenTypeIdentifier.of(wrapper.requireSingleValue(OAuth2ParameterNames.SUBJECT_TOKEN_TYPE, OAuth2ErrorBuilder.invalidRequest()))
         ) ;
 
-        var actorToken = wrapper.maybeSingleValue(OAuth2ParameterNames.ACTOR_TOKEN, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST))
+        var actorToken = wrapper.maybeSingleValue(OAuth2ParameterNames.ACTOR_TOKEN, OAuth2ErrorBuilder.invalidRequest())
                 .map(at -> {
-                    var actorTokenType = TokenTypeIdentifier.of(wrapper.requireSingleValue(OAuth2ParameterNames.ACTOR_TOKEN_TYPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST)));
+                    var actorTokenType = TokenTypeIdentifier.of(wrapper.requireSingleValue(OAuth2ParameterNames.ACTOR_TOKEN_TYPE, OAuth2ErrorBuilder.invalidRequest()));
                     return new Token(at, actorTokenType);
                 });
 
@@ -44,11 +45,11 @@ public class TokenExchangeGrantRequestConverter implements Converter<MultiValueM
                 .grantType(grantType)
                 .resource(resource)
                 .audience(wrapper.getValues(OAuth2ParameterNames.AUDIENCE))
-                .scope(wrapper.maybeSingleValue(OAuth2ParameterNames.SCOPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_SCOPE))
+                .scope(wrapper.maybeSingleValue(OAuth2ParameterNames.SCOPE, OAuth2ErrorBuilder.invalidScope())
                         .map(GrantUtilities::convertScope)
                         .orElseGet(List::of)
                 )
-                .requestedTokenType(wrapper.maybeSingleValue(OAuth2ParameterNames.REQUESTED_TOKEN_TYPE, new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST))
+                .requestedTokenType(wrapper.maybeSingleValue(OAuth2ParameterNames.REQUESTED_TOKEN_TYPE, OAuth2ErrorBuilder.invalidRequest())
                         .map(TokenTypeIdentifier::of)
                         .orElse(null)
                 )

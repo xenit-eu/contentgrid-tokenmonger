@@ -2,14 +2,12 @@ package com.contentgrid.tokenmonger.web.validator;
 
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtension;
 import com.contentgrid.tokenmonger.extensions.registration.RegisteredExtensionRepository;
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest.HasResource;
 import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantRequestValidator.ExtensionInformation;
 import java.net.URI;
 import java.util.HashSet;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
 @RequiredArgsConstructor
 public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInformation> implements GrantRequestValidator<HasResource, C> {
@@ -27,14 +25,17 @@ public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInf
 
         for (URI resourceUri : grantRequest.getResource()) {
             var application = registeredExtensionRepository.findByResourceUri(resourceUri.toString())
-                    .orElseThrow(() -> new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "No extension found for 'resource' %s".formatted(resourceUri)));
+                    .orElseThrow(() -> OAuth2ErrorBuilder.invalidRequest()
+                            .parameter("resource", resourceUri.toString())
+                            .description("is not registered for any extension")
+                            .buildException());
             targetApps.add(application);
         }
 
         var targetApp = switch (targetApps.size()) {
-            case 0 -> throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "At least one 'resource' must be requested");
+            case 0 -> throw OAuth2ErrorBuilder.invalidRequest().parameter("resource").isRequired().buildException();
             case 1 -> targetApps.iterator().next();
-            default -> throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), "'resource' URIs can not map to different extensions");
+            default -> throw OAuth2ErrorBuilder.invalidRequest().parameter("resource").description("must all be registered to the same extension").buildException();
         };
         context.setExtension(targetApp);
     }

@@ -1,9 +1,7 @@
 package com.contentgrid.tokenmonger.web.validator;
 
-import com.contentgrid.tokenmonger.oauth2.OAuth2ErrorException;
+import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 
 public class NoAudienceGrantRequestValidator<C> implements GrantRequestValidator<TokenExchangeGrantRequest, C> {
 
@@ -15,7 +13,10 @@ public class NoAudienceGrantRequestValidator<C> implements GrantRequestValidator
     @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
         if(!grantRequest.getAudience().isEmpty()) {
-            throw new OAuth2ErrorException(new OAuth2Error(OAuth2ErrorCodes.INVALID_REQUEST), getDescription());
+            throw OAuth2ErrorBuilder.invalidRequest()
+                    .parameter("audience")
+                    .mustBeAbsent()
+                    .buildException();
         }
     }
 }
