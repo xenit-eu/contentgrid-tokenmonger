@@ -2,6 +2,7 @@ package com.contentgrid.tokenmonger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.contentgrid.tokenmonger.IssuerContext.IssuerType;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantType;
@@ -37,7 +38,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @AutoConfigureMockMvc
@@ -120,7 +120,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
     }
 
     static MockHttpServletRequestBuilder contentGridTokenGrant(Jwt authorizationJwt) {
-        return MockMvcRequestBuilders.post("/.contentgrid/authentication/external/token")
+        return post("/.contentgrid/authentication/external/token")
                 .header("Host", "xyz.contentgrid.test")
                 .header("Authorization", "Bearer "+authorizationJwt.getTokenValue())
                 .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue())
@@ -128,7 +128,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
     }
 
     static MockHttpServletRequestBuilder tokenExchange(String uri) {
-        return MockMvcRequestBuilders.post(uri)
+        return post(uri)
                 .header("Host", "extensions.contentgrid.test")
                 .param("grant_type", AuthorizationGrantType.TOKEN_EXCHANGE.getValue())
                 .with(new EncodeToWwwFormRequestPostProcessor());
@@ -211,6 +211,20 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"));
+        }
+
+        @Test
+        void exchange_invalidGrantType() throws Exception {
+            var gatewayToken = createGatewayJwt();
+
+            mockMvc.perform(post("/.contentgrid/authentication/external/token")
+                            .header("Host", "xyz.contentgrid.test")
+                            .header("Authorization", "Bearer "+gatewayToken.getTokenValue())
+                            .param("grant_type", GrantType.TOKEN_EXCHANGE.getValue())
+                            .with(new EncodeToWwwFormRequestPostProcessor())
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("unsupported_grant_type"));
         }
 
         @Test
@@ -344,6 +358,18 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' is not an allowed host"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error_uri").exists());
         }
+
+        @Test
+        void exchange_invalidGrantType() throws Exception {
+            mockMvc.perform(post("/authentication/delegated/token")
+                            .header("Host", "extensions.contentgrid.test")
+                            .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue())
+                            .with(new EncodeToWwwFormRequestPostProcessor())
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("unsupported_grant_type"));
+        }
+
         @Test
         void exchange_withoutActor() throws Exception {
             mockMvc.perform(tokenExchange("/authentication/delegated/token",
@@ -543,6 +569,27 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                         assertThat(jwt.getAudience()).containsExactly("contentgrid:application:test1");
                         assertThat(jwt.getClaimAsStringList("context:application:resource")).containsExactly("/xyz", "/fff?a=b");
                     }));
+        }
+
+        @Test
+        void exchange_invalidGrantType() throws Exception {
+            mockMvc.perform(post("/authentication/system/token")
+                            .header("Host", "extensions.contentgrid.test")
+                            .param("grant_type", GrantType.CONTENTGRID_EXTENSION.getValue())
+                            .with(new EncodeToWwwFormRequestPostProcessor())
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("unsupported_grant_type"));
+        }
+
+        @Test
+        void exchange_repeatedGrantType() throws Exception {
+            mockMvc.perform(tokenExchange("/authentication/system/token", null, null)
+                            .param("grant_type", GrantType.TOKEN_EXCHANGE.getValue())
+                    )
+                    .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_grant"))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'grant_type' may only be supplied once"));
         }
 
         @Test
