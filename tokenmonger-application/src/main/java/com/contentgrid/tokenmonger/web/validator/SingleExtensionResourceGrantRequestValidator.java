@@ -8,6 +8,7 @@ import com.contentgrid.tokenmonger.web.validator.SingleExtensionResourceGrantReq
 import java.net.URI;
 import java.util.HashSet;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 
 @RequiredArgsConstructor
 public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInformation> implements GrantRequestValidator<HasResource, C> {
@@ -21,23 +22,25 @@ public class SingleExtensionResourceGrantRequestValidator<C extends ExtensionInf
 
     @Override
     public void validate(HasResource grantRequest, C context) {
-        var targetApps = new HashSet<RegisteredExtension>();
+        var errorBuilder = OAuth2ErrorBuilder.invalidRequest()
+                .parameter(OAuth2ParameterNames.RESOURCE);
+        var targetExtensions = new HashSet<RegisteredExtension>();
 
         for (URI resourceUri : grantRequest.getResource()) {
-            var application = registeredExtensionRepository.findByResourceUri(resourceUri.toString())
+            var extension = registeredExtensionRepository.findByResourceUri(resourceUri.toString())
                     .orElseThrow(() -> OAuth2ErrorBuilder.invalidRequest()
-                            .parameter("resource", resourceUri.toString())
+                            .parameter(OAuth2ParameterNames.RESOURCE, resourceUri.toString())
                             .description("is not registered for any extension")
                             .buildException());
-            targetApps.add(application);
+            targetExtensions.add(extension);
         }
 
-        var targetApp = switch (targetApps.size()) {
-            case 0 -> throw OAuth2ErrorBuilder.invalidRequest().parameter("resource").isRequired().buildException();
-            case 1 -> targetApps.iterator().next();
-            default -> throw OAuth2ErrorBuilder.invalidRequest().parameter("resource").description("must all be registered to the same extension").buildException();
+        var targetExtension = switch (targetExtensions.size()) {
+            case 0 -> throw errorBuilder.isRequired().buildException();
+            case 1 -> targetExtensions.iterator().next();
+            default -> throw errorBuilder.allValues("registered to the same extension").buildException();
         };
-        context.setExtension(targetApp);
+        context.setExtension(targetExtension);
     }
 
     public interface ExtensionInformation {

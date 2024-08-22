@@ -677,7 +677,7 @@ class TokenMongerApplicationTokenExchangeTests extends AbstractTokenmongerApplic
                     )
                     .andExpect(MockMvcResultMatchers.status().isBadRequest())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("invalid_request"))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' must all be registered to the same application"));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.error_description").value("Parameter 'resource' values must all be registered to the same application"));
         }
 
         @Test

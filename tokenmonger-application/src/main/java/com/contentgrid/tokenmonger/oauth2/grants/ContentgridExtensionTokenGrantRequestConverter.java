@@ -3,8 +3,6 @@ package com.contentgrid.tokenmonger.oauth2.grants;
 import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import java.util.List;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;

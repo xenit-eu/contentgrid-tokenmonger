@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 
 @RequiredArgsConstructor
 public class ApplicationResourceAllowedGrantRequestValidator<C extends ApplicationInformation & ApplicationResourceInformation> implements GrantRequestValidator<HasResource, C> {
@@ -33,7 +34,7 @@ public class ApplicationResourceAllowedGrantRequestValidator<C extends Applicati
     private String extractPath(URI uri, Collection<String> allowedHosts) {
         if(!allowedHosts.contains(uri.getHost())) {
             throw OAuth2ErrorBuilder.invalidTarget()
-                    .parameter("resource")
+                    .parameter(OAuth2ParameterNames.RESOURCE)
                     .description("is not an allowed host")
                     .buildException();
         }

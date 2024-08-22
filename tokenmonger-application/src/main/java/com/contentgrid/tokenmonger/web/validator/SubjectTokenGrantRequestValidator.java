@@ -5,6 +5,7 @@ import com.contentgrid.tokenmonger.oauth2.grants.TokenExchangeGrantRequest;
 import com.contentgrid.tokenmonger.oauth2.token.decoder.TokenDecoder;
 import com.contentgrid.tokenmonger.web.validator.SubjectTokenGrantRequestValidator.SubjectTokenInfo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 @RequiredArgsConstructor
@@ -18,7 +19,8 @@ public class SubjectTokenGrantRequestValidator<C extends SubjectTokenInfo> imple
 
     @Override
     public void validate(TokenExchangeGrantRequest grantRequest, C context) {
-        context.setSubjectToken(tokenDecoder.decode(grantRequest.getSubjectToken(), OAuth2ErrorBuilder.invalidRequest().parameter("subject_token")));
+        context.setSubjectToken(tokenDecoder.decode(grantRequest.getSubjectToken(), OAuth2ErrorBuilder.invalidRequest().parameter(
+                OAuth2ParameterNames.SUBJECT_TOKEN)));
     }
 
     public interface SubjectTokenInfo {

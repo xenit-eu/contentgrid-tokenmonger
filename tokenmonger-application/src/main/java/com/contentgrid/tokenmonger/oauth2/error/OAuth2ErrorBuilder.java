@@ -23,6 +23,8 @@ public class OAuth2ErrorBuilder {
     @Setter(AccessLevel.PRIVATE)
     String parameterValue = null;
 
+    boolean parameterPlural = false;
+
     @Setter(AccessLevel.NONE)
     List<String> descriptions = new ArrayList<>();
 
@@ -71,13 +73,20 @@ public class OAuth2ErrorBuilder {
         return description("must be absent");
     }
 
+    public OAuth2ErrorBuilder allValues(String description) {
+        parameterPlural = true;
+        return description("must all be "+description);
+    }
+
     public OAuth2Error build() {
         var errorDescriptionBuilder = new StringBuilder();
         if(parameter == null) {
             errorDescriptionBuilder.append("Request ");
         } else {
             errorDescriptionBuilder.append("Parameter '").append(parameter).append("' ");
-            if(parameterValue != null) {
+            if(parameterPlural) {
+                errorDescriptionBuilder.append("values ");
+            } else if(parameterValue != null) {
                 errorDescriptionBuilder.append("value '").append(parameterValue).append("' ");
             }
         }

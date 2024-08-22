@@ -2,6 +2,7 @@ package com.contentgrid.tokenmonger.web.validator;
 
 import com.contentgrid.tokenmonger.oauth2.error.OAuth2ErrorBuilder;
 import com.contentgrid.tokenmonger.oauth2.grants.GrantRequest;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 
 public class NoScopeGrantRequestValidator<C> implements GrantRequestValidator<GrantRequest.HasScope, C> {
 
@@ -14,7 +15,7 @@ public class NoScopeGrantRequestValidator<C> implements GrantRequestValidator<Gr
     public void validate(GrantRequest.HasScope grantRequest, C context) {
         if(!grantRequest.getScope().isEmpty()) {
             throw OAuth2ErrorBuilder.invalidRequest()
-                    .parameter("scope")
+                    .parameter(OAuth2ParameterNames.SCOPE)
                     .mustBeAbsent()
                     .buildException();
         }
