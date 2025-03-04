@@ -48,7 +48,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-mustache'
 
-	runtimeOnly 'com.contentgrid.spring:contentgrid-spring-boot-autoconfigure:0.18.0'
+	runtimeOnly 'com.contentgrid.spring:contentgrid-spring-boot-autoconfigure:0.18.1'
 
 	implementation 'com.contentgrid.configuration:contentgrid-configuration-contentgrid-apps'
 	runtimeOnly 'com.contentgrid.configuration:contentgrid-configuration-autoconfigure'
