@@ -71,7 +71,7 @@ dependencies {
 	testImplementation 'io.fabric8:kubernetes-client'
 	testImplementation 'org.springframework.cloud:spring-cloud-kubernetes-fabric8-autoconfig:3.2.1'
 
-	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.0')
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.1')
 	testImplementation 'org.testcontainers:k3s'
 	testImplementation 'org.testcontainers:junit-jupiter'
 
