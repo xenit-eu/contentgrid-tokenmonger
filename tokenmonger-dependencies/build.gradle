@@ -10,6 +10,6 @@ dependencies {
     api platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
     api platform("com.contentgrid.configuration:contentgrid-configuration-bom:0.1.2")
     constraints {
-        api 'org.bouncycastle:bcpkix-jdk18on:1.82'
+        api 'org.bouncycastle:bcpkix-jdk18on:1.83'
     }
 }
