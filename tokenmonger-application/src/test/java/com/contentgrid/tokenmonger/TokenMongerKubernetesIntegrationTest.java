@@ -13,7 +13,10 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -21,12 +24,23 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.k3s.K3sContainer;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(properties = {
-        "spring.main.cloud-platform=kubernetes",
-        "spring.profiles.active=test"
-}, classes = {AbstractTokenmongerApplicationIntegrationTest.TestConfig.class})
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+            "spring.main.cloud-platform=kubernetes",
+            "spring.profiles.active=test",
+            "management.endpoints.web.exposure.include=*",
+            "management.prometheus.metrics.export.enabled=true", //bootRun profile disables metrics, which is fine for other tests but should be overridden here
+            "management.server.port=0" // random, different port from main port
+        },
+        classes = {AbstractTokenmongerApplicationIntegrationTest.TestConfig.class})
 @Testcontainers
 class TokenMongerKubernetesIntegrationTest extends AbstractTokenmongerApplicationIntegrationTest {
+
+    @Autowired
+    private TestRestTemplate rest;
+    @Value("${local.management.port}")
+    int managementPort;
 
     @Container
     private static final K3sContainer k3sContainer = new K3sContainer(DockerImageName.parse("rancher/k3s:latest"));
@@ -76,6 +90,12 @@ class TokenMongerKubernetesIntegrationTest extends AbstractTokenmongerApplicatio
                     });
         });
 
+    }
+
+    @Test
+    void prometheusEndpointIsPublic() {
+        ResponseEntity<String> resp = rest.getForEntity("http://localhost:" + managementPort + "/actuator/prometheus", String.class);
+        assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
 
