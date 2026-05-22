@@ -12,7 +12,7 @@ bootRun {
 }
 
 java {
-	sourceCompatibility = '17'
+	sourceCompatibility = '21'
 }
 
 springBoot {
@@ -48,7 +48,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-mustache'
 
-	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'// See https://xenitsupport.jira.com/browse/ETHCG-445?focusedCommentId=150577
+
+	implementation ('com.contentgrid.common:contentgrid-common-spring-autoconfigure:0.0.1-SNAPSHOT') {
+		capabilities {
+			requireCapability('com.contentgrid.common:spring-boot-3:0.0.1-SNAPSHOT')
+		}
+	}
 
 	runtimeOnly 'com.contentgrid.spring:contentgrid-spring-boot-autoconfigure:0.18.1'
 
