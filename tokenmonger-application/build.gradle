@@ -48,10 +48,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-mustache'
 
-
-	implementation ('com.contentgrid.common:contentgrid-common-spring-autoconfigure:0.0.1-SNAPSHOT') {
+	implementation ('com.contentgrid.common:contentgrid-common-spring-boot-starter:0.1.2') {
 		capabilities {
-			requireCapability('com.contentgrid.common:spring-boot-3:0.0.1-SNAPSHOT')
+			requireFeature('spring-boot-3')
 		}
 	}
 
@@ -68,6 +67,10 @@ dependencies {
 
 	runtimeOnly('org.bouncycastle:bcpkix-jdk18on') {
 		because "necessary to load PEM-encoded private keys into JWKs"
+	}
+
+	runtimeOnly ('io.micrometer:micrometer-registry-prometheus') {
+		because "Put on classpath to trigger prometheus registry autoconfigure and activate prom metrics endpoint. ACC-2952"
 	}
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
