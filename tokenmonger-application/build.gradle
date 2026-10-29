@@ -63,7 +63,7 @@ dependencies {
 		exclude group: 'io.fabric8'
 	}
 	runtimeOnly 'com.contentgrid.configuration:contentgrid-configuration-properties-spring'
-	runtimeOnly 'org.springframework.cloud:spring-cloud-kubernetes-fabric8-autoconfig:3.3.3'
+	runtimeOnly 'org.springframework.cloud:spring-cloud-kubernetes-fabric8-autoconfig:5.0.3'
 
 	runtimeOnly('org.bouncycastle:bcpkix-jdk18on') {
 		because "necessary to load PEM-encoded private keys into JWKs"
@@ -79,7 +79,7 @@ dependencies {
 
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on'
 	testImplementation 'io.fabric8:kubernetes-client'
-	testImplementation 'org.springframework.cloud:spring-cloud-kubernetes-fabric8-autoconfig:3.3.3'
+	testImplementation 'org.springframework.cloud:spring-cloud-kubernetes-fabric8-autoconfig:5.0.3'
 
 	testImplementation platform('org.testcontainers:testcontainers-bom:2.0.5')
 	testImplementation 'org.testcontainers:testcontainers-k3s'
